@@ -1,0 +1,1033 @@
+<!doctype html>
+<html lang="fr" class="h-full">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NexaDesk — Réservations</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <!-- JS partagé entre toutes les pages : sidebar, toast, toggle, helpers -->
+    <script src="js/app.js"></script>
+    <style>
+      body {
+        font-family: "Inter", sans-serif;
+      }
+
+      /* Sidebar active link */
+      .nav-link {
+        transition: background 0.15s;
+      }
+      .nav-link:hover {
+        background: rgba(99, 102, 241, 0.06);
+      }
+      .nav-link.active {
+        background: rgba(99, 102, 241, 0.1);
+        color: #4338ca;
+      }
+      .nav-link.active svg {
+        color: #4f46e5;
+      }
+
+      /* Sidebar mobile */
+      #sidebar {
+        transition: transform 0.25s ease;
+      }
+      @media (max-width: 1023px) {
+        #sidebar {
+          transform: translateX(-100%);
+        }
+        #sidebar.open {
+          transform: translateX(0);
+        }
+      }
+
+      /* Scrollbar discrète */
+      ::-webkit-scrollbar {
+        width: 5px;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 10px;
+      }
+
+      /* Animation entrée */
+      .fade-up {
+        animation: fadeUp 0.35s ease-out;
+      }
+      @keyframes fadeUp {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* Pulse badge IA active */
+      .pulse {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: #22c55e;
+        animation: pulse 2s infinite;
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.5);
+        }
+        50% {
+          box-shadow: 0 0 0 6px rgba(34, 197, 94, 0);
+        }
+      }
+
+      /* Hover lignes tableau */
+      .table-row:hover {
+        background: #f8fafc;
+      }
+    </style>
+  </head>
+
+  <body class="h-full bg-slate-50 text-slate-800">
+    <div class="flex h-screen overflow-hidden">
+      <!-- Overlay mobile -->
+      <div
+        id="overlay"
+        class="hidden fixed inset-0 bg-black/40 z-30 lg:hidden"
+        onclick="closeSidebar()"
+      ></div>
+
+      <!-- ══════════════════════════════════════
+       SIDEBAR
+  ══════════════════════════════════════ -->
+      <aside
+        id="sidebar"
+        class="fixed lg:static z-40 inset-y-0 left-0 w-64 bg-white border-r border-slate-200 flex flex-col"
+      >
+        <!-- Logo -->
+        <div
+          class="h-16 flex items-center gap-3 px-5 border-b border-slate-100"
+        >
+          <div
+            class="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center"
+          >
+            <svg
+              class="w-5 h-5 text-white"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
+              />
+            </svg>
+          </div>
+          <span class="font-bold text-slate-800 text-base">NexaDesk</span>
+          <button
+            class="ml-auto lg:hidden text-slate-400"
+            onclick="closeSidebar()"
+          >
+            <svg
+              class="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+        </div>
+
+        <!-- Navigation -->
+        <nav class="flex-1 py-4 px-3 space-y-0.5 overflow-y-auto">
+          <p
+            class="px-3 mb-2 text-[11px] font-semibold text-slate-400 uppercase tracking-wider"
+          >
+            Général
+          </p>
+
+          <a
+            href="index.html"
+            class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600"
+          >
+            <svg
+              class="w-5 h-5 text-slate-400"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+              />
+            </svg>
+            Dashboard
+          </a>
+
+          <a
+            href="conversations.html"
+            class="nav-link flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600"
+          >
+            <span class="flex items-center gap-3">
+              <svg
+                class="w-5 h-5 text-slate-400"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.86 9.86 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                />
+              </svg>
+              Conversations
+            </span>
+            <span
+              class="text-xs font-semibold bg-indigo-100 text-indigo-600 px-1.5 py-0.5 rounded-md"
+              >12</span
+            >
+          </a>
+
+          <a
+            href="commandes.html"
+            class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600"
+          >
+            <svg
+              class="w-5 h-5 text-slate-400"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
+              />
+            </svg>
+            Commandes
+          </a>
+
+          <a
+            href="reservations.html"
+            class="nav-link active flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium"
+          >
+            <svg
+              class="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+              />
+            </svg>
+            Réservations
+          </a>
+
+          <a
+            href="notifications.html"
+            class="nav-link flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600"
+          >
+            <span class="flex items-center gap-3">
+              <svg
+                class="w-5 h-5 text-slate-400"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+                />
+              </svg>
+              Notifications
+            </span>
+            <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+          </a>
+
+          <p
+            class="px-3 mt-5 mb-2 text-[11px] font-semibold text-slate-400 uppercase tracking-wider"
+          >
+            Pilotage
+          </p>
+
+          <a
+            href="analytics.html"
+            class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600"
+          >
+            <svg
+              class="w-5 h-5 text-slate-400"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm6 0V9a2 2 0 00-2-2h-2a2 2 0 00-2 2v10a2 2 0 002 2h2a2 2 0 002-2zm6 0V5a2 2 0 00-2-2h-2a2 2 0 00-2 2v14a2 2 0 002 2h2a2 2 0 002-2z"
+              />
+            </svg>
+            Analytics
+          </a>
+
+          <a
+            href="settings.html"
+            class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600"
+          >
+            <svg
+              class="w-5 h-5 text-slate-400"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+              />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+              />
+            </svg>
+            Paramètres IA
+          </a>
+        </nav>
+
+        <!-- Profil -->
+        <div class="p-3 border-t border-slate-100">
+          <div
+            class="flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-slate-50 cursor-pointer"
+          >
+            <img
+              src="https://i.pravatar.cc/40?img=12"
+              class="w-9 h-9 rounded-full"
+              alt="Sarah"
+            />
+            <div>
+              <p class="text-sm font-semibold text-slate-700">Sarah Lemoine</p>
+              <p class="text-xs text-slate-400">Administratrice</p>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- ══════════════════════════════════════
+       CONTENU PRINCIPAL
+  ══════════════════════════════════════ -->
+      <div class="flex-1 flex flex-col overflow-hidden">
+        <!-- Topbar -->
+        <header
+          class="h-16 bg-white border-b border-slate-200 flex items-center gap-4 px-4 sm:px-6"
+        >
+          <button class="lg:hidden text-slate-500" onclick="openSidebar()">
+            <svg
+              class="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M4 6h16M4 12h16M4 18h16"
+              />
+            </svg>
+          </button>
+
+          <div>
+            <h1 class="text-base font-semibold text-slate-800">Réservations</h1>
+            <p class="text-xs text-slate-400 hidden sm:block">
+              Gérez toutes les réservations de vos établissements
+            </p>
+          </div>
+
+          <div class="flex-1"></div>
+
+          <span
+            class="hidden sm:flex items-center gap-2 text-xs font-medium text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-full"
+          >
+            <span class="pulse"></span> IA active
+          </span>
+
+          <button
+            class="relative p-2 rounded-xl hover:bg-slate-100 text-slate-400"
+          >
+            <svg
+              class="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+              />
+            </svg>
+            <span
+              class="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full"
+            ></span>
+          </button>
+
+          <img
+            src="https://i.pravatar.cc/36?img=12"
+            class="w-9 h-9 rounded-full"
+            alt="Avatar"
+          />
+        </header>
+
+        <!-- Page scrollable -->
+        <main class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 space-y-6">
+          <!-- En-tête -->
+          <div
+            class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 fade-up"
+          >
+            <div>
+              <h2 class="text-2xl font-bold text-slate-900">Réservations</h2>
+              <p class="text-sm text-slate-500 mt-1">
+                47 réservations à venir · 3 en attente de confirmation
+              </p>
+            </div>
+            <button
+              onclick="openModal(null)"
+              class="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white text-sm font-semibold px-4 py-2.5 rounded-xl hover:opacity-90 transition-opacity shadow-sm"
+            >
+              <svg
+                class="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M12 4v16m8-8H4"
+                />
+              </svg>
+              Nouvelle réservation
+            </button>
+          </div>
+
+          <!-- KPIs -->
+          <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 fade-up">
+            <div class="bg-white rounded-2xl border border-slate-200 p-5">
+              <p class="text-xs text-slate-400 mb-1">Total à venir</p>
+              <p class="text-2xl font-bold text-slate-900">47</p>
+              <p class="text-xs text-emerald-500 font-medium mt-1">
+                ↑ +3 vs hier
+              </p>
+            </div>
+            <div class="bg-white rounded-2xl border border-slate-200 p-5">
+              <p class="text-xs text-slate-400 mb-1">Aujourd'hui</p>
+              <p class="text-2xl font-bold text-indigo-600">12</p>
+              <p class="text-xs text-slate-400 mt-1">dont 2 ce soir</p>
+            </div>
+            <div class="bg-white rounded-2xl border border-slate-200 p-5">
+              <p class="text-xs text-slate-400 mb-1">En attente</p>
+              <p class="text-2xl font-bold text-amber-500">3</p>
+              <p class="text-xs text-slate-400 mt-1">à confirmer</p>
+            </div>
+            <div class="bg-white rounded-2xl border border-slate-200 p-5">
+              <p class="text-xs text-slate-400 mb-1">Annulées (7j)</p>
+              <p class="text-2xl font-bold text-rose-500">5</p>
+              <p class="text-xs text-rose-400 font-medium mt-1">
+                ↑ +2 vs semaine préc.
+              </p>
+            </div>
+          </div>
+
+          <!-- Filtres -->
+          <div class="bg-white rounded-2xl border border-slate-200 p-4 fade-up">
+            <div class="flex flex-wrap gap-3 items-center">
+              <div class="relative flex-1 min-w-[200px]">
+                <svg
+                  class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M21 21l-4.35-4.35M17 10a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
+                </svg>
+                <input
+                  id="search"
+                  type="text"
+                  placeholder="Rechercher client ou établissement…"
+                  oninput="render()"
+                  class="w-full pl-9 pr-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-200 placeholder-slate-400"
+                />
+              </div>
+
+              <select
+                id="filterStatus"
+                onchange="render()"
+                class="text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+              >
+                <option value="all">Tous les statuts</option>
+                <option value="pending">En attente</option>
+                <option value="confirmed">Confirmée</option>
+                <option value="cancelled">Annulée</option>
+              </select>
+
+              <select
+                id="filterBusiness"
+                onchange="render()"
+                class="text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+              >
+                <option value="all">Tous les établissements</option>
+                <option value="Restaurant Le Bistrot">
+                  Restaurant Le Bistrot
+                </option>
+                <option value="Hôtel Riviera">Hôtel Riviera</option>
+                <option value="Pharmacie Centrale">Pharmacie Centrale</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Tableau -->
+          <div
+            class="bg-white rounded-2xl border border-slate-200 overflow-hidden fade-up"
+          >
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead class="bg-slate-50 border-b border-slate-200">
+                  <tr>
+                    <th
+                      class="text-left text-xs font-semibold text-slate-500 uppercase tracking-wide px-5 py-3.5"
+                    >
+                      Client
+                    </th>
+                    <th
+                      class="text-left text-xs font-semibold text-slate-500 uppercase tracking-wide px-5 py-3.5 hidden md:table-cell"
+                    >
+                      Établissement
+                    </th>
+                    <th
+                      class="text-left text-xs font-semibold text-slate-500 uppercase tracking-wide px-5 py-3.5"
+                    >
+                      Date & heure
+                    </th>
+                    <th
+                      class="text-left text-xs font-semibold text-slate-500 uppercase tracking-wide px-5 py-3.5 hidden sm:table-cell"
+                    >
+                      Personnes
+                    </th>
+                    <th
+                      class="text-left text-xs font-semibold text-slate-500 uppercase tracking-wide px-5 py-3.5"
+                    >
+                      Statut
+                    </th>
+                    <th class="px-5 py-3.5"></th>
+                  </tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+              </table>
+            </div>
+
+            <div id="emptyState" class="hidden py-16 text-center">
+              <p class="text-sm text-slate-500 font-medium">
+                Aucune réservation trouvée
+              </p>
+              <p class="text-xs text-slate-400 mt-1">
+                Modifiez vos filtres de recherche
+              </p>
+            </div>
+          </div>
+
+          <!-- Calendrier 7 jours -->
+          <div class="bg-white rounded-2xl border border-slate-200 p-5 fade-up">
+            <h3 class="text-base font-semibold text-slate-800 mb-4">
+              Vue calendrier — 7 prochains jours
+            </h3>
+            <div id="calendar" class="grid grid-cols-7 gap-2"></div>
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════
+     MODAL réservation
+══════════════════════════════════════ -->
+    <div
+      id="modal"
+      class="hidden fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4"
+      onclick="if (event.target === this) closeModal();"
+    >
+      <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+        <div
+          class="flex items-center justify-between px-6 py-4 border-b border-slate-100"
+        >
+          <h3 id="modalTitle" class="text-lg font-bold text-slate-900">
+            Nouvelle réservation
+          </h3>
+          <button
+            onclick="closeModal()"
+            class="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400"
+          >
+            <svg
+              class="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+        </div>
+
+        <div class="p-6 space-y-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-500 mb-1.5"
+              >Client *</label
+            >
+            <input
+              id="f-client"
+              type="text"
+              placeholder="Nom du client"
+              class="w-full px-3 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-200"
+            />
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-500 mb-1.5"
+              >Établissement</label
+            >
+            <select
+              id="f-business"
+              class="w-full px-3 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-200"
+            >
+              <option>Restaurant Le Bistrot</option>
+              <option>Hôtel Riviera</option>
+              <option>Pharmacie Centrale</option>
+            </select>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-500 mb-1.5"
+                >Date *</label
+              >
+              <input
+                id="f-date"
+                type="date"
+                class="w-full px-3 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-200"
+              />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-500 mb-1.5"
+                >Heure *</label
+              >
+              <input
+                id="f-time"
+                type="time"
+                class="w-full px-3 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-200"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-500 mb-1.5"
+              >Nombre de personnes</label
+            >
+            <input
+              id="f-guests"
+              type="number"
+              min="1"
+              max="20"
+              value="2"
+              class="w-full px-3 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-200"
+            />
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-500 mb-1.5"
+              >Note (optionnel)</label
+            >
+            <textarea
+              id="f-note"
+              rows="2"
+              placeholder="Allergie, table en terrasse, chambre spécifique…"
+              class="w-full px-3 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-200 resize-none"
+            ></textarea>
+          </div>
+        </div>
+
+        <div class="flex gap-3 px-6 py-4 border-t border-slate-100">
+          <button
+            onclick="closeModal()"
+            class="flex-1 py-2.5 text-sm font-semibold text-slate-600 bg-slate-100 rounded-xl hover:bg-slate-200 transition-colors"
+          >
+            Annuler
+          </button>
+          <button
+            onclick="saveReservation()"
+            class="flex-1 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-indigo-600 to-violet-600 rounded-xl hover:opacity-90 transition-opacity"
+          >
+            Enregistrer
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast -->
+    <div
+      id="toast"
+      class="hidden fixed bottom-6 right-6 z-50 flex items-center gap-2 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-xl text-sm font-medium"
+    >
+      <svg
+        class="w-4 h-4 text-emerald-400"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2.5"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          d="M5 13l4 4L19 7"
+        />
+      </svg>
+      <span id="toastText">Action effectuée</span>
+    </div>
+
+    <script>
+      // ── Données ───────────────────────────────────────────
+      let reservations = [
+        {
+          id: 1,
+          client: "Karim Bensalem",
+          avatar: "https://i.pravatar.cc/40?img=33",
+          business: "Restaurant Le Bistrot",
+          date: "2026-06-18",
+          time: "20:00",
+          guests: 4,
+          note: "Table en terrasse",
+          status: "confirmed",
+        },
+        {
+          id: 2,
+          client: "Léa Martin",
+          avatar: "https://i.pravatar.cc/40?img=47",
+          business: "Hôtel Riviera",
+          date: "2026-06-19",
+          time: "14:00",
+          guests: 2,
+          note: "Arrivée tardive",
+          status: "pending",
+        },
+        {
+          id: 3,
+          client: "Sophie Laurent",
+          avatar: "https://i.pravatar.cc/40?img=44",
+          business: "Restaurant Le Bistrot",
+          date: "2026-06-19",
+          time: "12:30",
+          guests: 2,
+          note: "",
+          status: "confirmed",
+        },
+        {
+          id: 4,
+          client: "Yacine Tahiri",
+          avatar: "https://i.pravatar.cc/40?img=22",
+          business: "Hôtel Riviera",
+          date: "2026-06-20",
+          time: "18:00",
+          guests: 3,
+          note: "Suite junior",
+          status: "cancelled",
+        },
+        {
+          id: 5,
+          client: "Nadia Bouzid",
+          avatar: "https://i.pravatar.cc/40?img=29",
+          business: "Hôtel Riviera",
+          date: "2026-06-21",
+          time: "10:00",
+          guests: 1,
+          note: "Spa inclus",
+          status: "confirmed",
+        },
+        {
+          id: 6,
+          client: "Thomas Garnier",
+          avatar: "https://i.pravatar.cc/40?img=14",
+          business: "Restaurant Le Bistrot",
+          date: "2026-06-21",
+          time: "19:30",
+          guests: 6,
+          note: "Anniversaire",
+          status: "pending",
+        },
+        {
+          id: 7,
+          client: "Inès Dubois",
+          avatar: "https://i.pravatar.cc/40?img=15",
+          business: "Pharmacie Centrale",
+          date: "2026-06-22",
+          time: "09:00",
+          guests: 1,
+          note: "Consultation",
+          status: "confirmed",
+        },
+        {
+          id: 8,
+          client: "Amine Rahmouni",
+          avatar: "https://i.pravatar.cc/40?img=8",
+          business: "Restaurant Le Bistrot",
+          date: "2026-06-23",
+          time: "20:30",
+          guests: 2,
+          note: "",
+          status: "pending",
+        },
+        {
+          id: 9,
+          client: "Fatima Zahra",
+          avatar: "https://i.pravatar.cc/40?img=31",
+          business: "Hôtel Riviera",
+          date: "2026-06-24",
+          time: "15:00",
+          guests: 2,
+          note: "Vue mer",
+          status: "confirmed",
+        },
+      ];
+
+      // Config statuts : label + classes Tailwind
+      const STATUS = {
+        pending: {
+          label: "En attente",
+          badge: "bg-amber-50 text-amber-600",
+          dot: "bg-amber-400",
+        },
+        confirmed: {
+          label: "Confirmée",
+          badge: "bg-emerald-50 text-emerald-600",
+          dot: "bg-emerald-500",
+        },
+        cancelled: {
+          label: "Annulée",
+          badge: "bg-rose-50 text-rose-600",
+          dot: "bg-rose-400",
+        },
+      };
+
+      let nextId = 10;
+      let editingId = null;
+
+      // ── Rendu du tableau ──────────────────────────────────
+      function render() {
+        const search = document.getElementById("search").value.toLowerCase();
+        const statFilt = document.getElementById("filterStatus").value;
+        const bizFilt = document.getElementById("filterBusiness").value;
+
+        const filtered = reservations.filter((r) => {
+          const okSearch =
+            !search ||
+            r.client.toLowerCase().includes(search) ||
+            r.business.toLowerCase().includes(search);
+          const okStatus = statFilt === "all" || r.status === statFilt;
+          const okBusiness = bizFilt === "all" || r.business === bizFilt;
+          return okSearch && okStatus && okBusiness;
+        });
+
+        const tbody = document.getElementById("tableBody");
+        const empty = document.getElementById("emptyState");
+
+        if (filtered.length === 0) {
+          tbody.innerHTML = "";
+          empty.classList.remove("hidden");
+          renderCalendar();
+          return;
+        }
+        empty.classList.add("hidden");
+
+        tbody.innerHTML = filtered
+          .map(
+            (r) => `
+      <tr class="table-row border-b border-slate-50 cursor-pointer" onclick="openModal(${r.id})">
+        <td class="px-5 py-3.5">
+          <div class="flex items-center gap-3">
+            <img src="${r.avatar}" class="w-8 h-8 rounded-full" alt="" />
+            <div>
+              <p class="font-medium text-slate-700">${r.client}</p>
+              ${r.note ? `<p class="text-xs text-slate-400 truncate max-w-[160px]">${r.note}</p>` : ""}
+            </div>
+          </div>
+        </td>
+        <td class="px-5 py-3.5 text-slate-500 hidden md:table-cell">${r.business}</td>
+        <td class="px-5 py-3.5">
+          <p class="font-medium text-slate-700">${formatDate(r.date)}</p>
+          <p class="text-xs text-slate-400">${r.time}</p>
+        </td>
+        <td class="px-5 py-3.5 hidden sm:table-cell">
+          <span class="flex items-center gap-1.5 text-slate-600">
+            <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            ${r.guests}
+          </span>
+        </td>
+        <td class="px-5 py-3.5">
+          <span class="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full ${STATUS[r.status].badge}">
+            <span class="w-1.5 h-1.5 rounded-full ${STATUS[r.status].dot}"></span>
+            ${STATUS[r.status].label}
+          </span>
+        </td>
+        <td class="px-5 py-3.5 text-right">
+          <svg class="w-4 h-4 text-slate-300 inline" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+        </td>
+      </tr>
+    `,
+          )
+          .join("");
+
+        renderCalendar();
+      }
+
+      // ── Calendrier 7 jours ───────────────────────────────
+      function renderCalendar() {
+        const cal = document.getElementById("calendar");
+        const today = new Date("2026-06-18");
+        const dayNames = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
+
+        cal.innerHTML = Array.from({ length: 7 }, (_, i) => {
+          const d = new Date(today);
+          d.setDate(today.getDate() + i);
+          const dateStr = d.toISOString().split("T")[0];
+          const count = reservations.filter((r) => r.date === dateStr).length;
+          const isToday = i === 0;
+
+          return `
+        <div class="flex flex-col items-center gap-1.5">
+          <p class="text-xs text-slate-400 font-medium">${dayNames[d.getDay()]}</p>
+          <div class="w-9 h-9 rounded-xl flex items-center justify-center text-sm font-semibold
+            ${isToday ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-600"}">
+            ${d.getDate()}
+          </div>
+          ${
+            count > 0
+              ? `<span class="text-[11px] font-bold ${isToday ? "text-indigo-600" : "text-slate-500"}">${count} rés.</span>`
+              : `<span class="text-[11px] text-slate-300">—</span>`
+          }
+        </div>
+      `;
+        }).join("");
+      }
+
+      // ── Modal ─────────────────────────────────────────────
+      function openModal(id) {
+        editingId = id;
+
+        if (id === null) {
+          // Nouvelle réservation
+          document.getElementById("modalTitle").textContent =
+            "Nouvelle réservation";
+          document.getElementById("f-client").value = "";
+          document.getElementById("f-date").value = "2026-06-18";
+          document.getElementById("f-time").value = "";
+          document.getElementById("f-guests").value = "2";
+          document.getElementById("f-note").value = "";
+        } else {
+          // Édition d'une réservation existante
+          const r = reservations.find((r) => r.id === id);
+          document.getElementById("modalTitle").textContent =
+            `Réservation — ${r.client}`;
+          document.getElementById("f-client").value = r.client;
+          document.getElementById("f-business").value = r.business;
+          document.getElementById("f-date").value = r.date;
+          document.getElementById("f-time").value = r.time;
+          document.getElementById("f-guests").value = r.guests;
+          document.getElementById("f-note").value = r.note;
+        }
+
+        document.getElementById("modal").classList.remove("hidden");
+      }
+
+      function closeModal() {
+        document.getElementById("modal").classList.add("hidden");
+      }
+
+      function saveReservation() {
+        const client = document.getElementById("f-client").value.trim();
+        const business = document.getElementById("f-business").value;
+        const date = document.getElementById("f-date").value;
+        const time = document.getElementById("f-time").value;
+        const guests = parseInt(document.getElementById("f-guests").value) || 1;
+        const note = document.getElementById("f-note").value.trim();
+
+        if (!client || !date || !time) {
+          showToast("Remplissez les champs obligatoires (*)");
+          return;
+        }
+
+        if (editingId === null) {
+          reservations.unshift({
+            id: nextId++,
+            client,
+            avatar:
+              "https://i.pravatar.cc/40?img=" + Math.floor(Math.random() * 70),
+            business,
+            date,
+            time,
+            guests,
+            note,
+            status: "pending",
+          });
+          showToast("Réservation créée !");
+        } else {
+          const r = reservations.find((r) => r.id === editingId);
+          Object.assign(r, { client, business, date, time, guests, note });
+          showToast("Réservation mise à jour");
+        }
+
+        closeModal();
+        render();
+      }
+
+      // formatDate(), showToast(), openSidebar() et closeSidebar()
+      // sont définies dans js/app.js et réutilisées ici.
+
+      // Init
+      render();
+    </script>
+  </body>
+</html>

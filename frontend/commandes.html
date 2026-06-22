@@ -1,0 +1,1274 @@
+<!doctype html>
+<html lang="fr" class="h-full">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NexaDesk — Commandes</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: { sans: ["Inter", "system-ui", "sans-serif"] },
+            colors: {
+              brand: {
+                50: "#f0f4ff",
+                100: "#e0e9ff",
+                200: "#c7d6fe",
+                300: "#a5b8fd",
+                400: "#818cf8",
+                500: "#6366f1",
+                600: "#4f46e5",
+                700: "#4338ca",
+                800: "#3730a3",
+                900: "#312e81",
+              },
+            },
+            animation: {
+              "fade-in": "fadeIn 0.4s ease-out",
+              "slide-up": "slideUp 0.35s ease-out",
+              "pop-in": "popIn 0.2s ease-out",
+              "modal-in": "modalIn 0.25s cubic-bezier(.16,1,.3,1)",
+            },
+            keyframes: {
+              fadeIn: { "0%": { opacity: "0" }, "100%": { opacity: "1" } },
+              slideUp: {
+                "0%": { opacity: "0", transform: "translateY(12px)" },
+                "100%": { opacity: "1", transform: "translateY(0)" },
+              },
+              popIn: {
+                "0%": { opacity: "0", transform: "scale(.97)" },
+                "100%": { opacity: "1", transform: "scale(1)" },
+              },
+              modalIn: {
+                "0%": { opacity: "0", transform: "scale(.95) translateY(8px)" },
+                "100%": { opacity: "1", transform: "scale(1) translateY(0)" },
+              },
+            },
+          },
+        },
+      };
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <!-- JS partagé entre toutes les pages : sidebar, toast, toggle, helpers -->
+    <script src="js/app.js"></script>
+    <style>
+      body {
+        font-family: "Inter", system-ui, sans-serif;
+      }
+      ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 10px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+
+      .sidebar-link {
+        transition: all 0.18s ease;
+        position: relative;
+      }
+      .sidebar-link:hover {
+        background: rgba(99, 102, 241, 0.06);
+      }
+      .sidebar-link.active {
+        background: linear-gradient(
+          135deg,
+          rgba(99, 102, 241, 0.1),
+          rgba(139, 92, 246, 0.08)
+        );
+        color: #4338ca;
+      }
+      .sidebar-link.active .nav-icon {
+        color: #4f46e5;
+      }
+      .sidebar-link.active::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 8px;
+        bottom: 8px;
+        width: 3px;
+        background: linear-gradient(180deg, #6366f1, #8b5cf6);
+        border-radius: 0 4px 4px 0;
+      }
+
+      #mobile-overlay {
+        transition: opacity 0.25s ease;
+      }
+      #sidebar {
+        transition: transform 0.25s ease;
+      }
+      @media (max-width: 1023px) {
+        #sidebar {
+          transform: translateX(-100%);
+        }
+        #sidebar.open {
+          transform: translateX(0);
+        }
+      }
+
+      .pulse-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: #22c55e;
+        box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.6);
+        animation: pulse 2s infinite;
+      }
+      @keyframes pulse {
+        0% {
+          box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.5);
+        }
+        70% {
+          box-shadow: 0 0 0 6px rgba(34, 197, 94, 0);
+        }
+        100% {
+          box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+        }
+      }
+
+      .row-hover {
+        transition: background 0.15s ease;
+      }
+      .row-hover:hover {
+        background: #f8fafc;
+      }
+
+      .view-toggle-btn {
+        transition: all 0.15s ease;
+      }
+
+      .kanban-card {
+        transition:
+          transform 0.2s ease,
+          box-shadow 0.2s ease;
+        cursor: grab;
+      }
+      .kanban-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px -8px rgba(30, 41, 59, 0.15);
+      }
+      .kanban-card.dragging {
+        opacity: 0.4;
+      }
+
+      .kanban-col.drag-over {
+        background: rgba(99, 102, 241, 0.04);
+        border-color: #a5b8fd;
+      }
+
+      #modal-backdrop {
+        transition: opacity 0.2s ease;
+      }
+
+      .tab-btn {
+        transition: all 0.15s ease;
+      }
+
+      select.status-select {
+        transition: all 0.15s ease;
+      }
+    </style>
+  </head>
+  <body class="h-full bg-slate-50 text-slate-800">
+    <div class="flex h-screen overflow-hidden">
+      <!-- ░░░ Mobile overlay ░░░ -->
+      <div
+        id="mobile-overlay"
+        class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-30 lg:hidden"
+        onclick="toggleSidebar()"
+      ></div>
+
+      <!-- ░░░ SIDEBAR ░░░ -->
+      <aside
+        id="sidebar"
+        class="fixed lg:static z-40 inset-y-0 left-0 w-64 bg-white border-r border-slate-200 flex flex-col"
+      >
+        <div
+          class="h-16 flex items-center gap-2.5 px-5 border-b border-slate-100 flex-shrink-0"
+        >
+          <div
+            class="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-sm"
+          >
+            <svg
+              class="w-4.5 h-4.5 text-white"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
+              />
+            </svg>
+          </div>
+          <span class="text-base font-bold text-slate-800 tracking-tight"
+            >NexaDesk</span
+          >
+          <button
+            class="ml-auto lg:hidden text-slate-400 hover:text-slate-600"
+            onclick="toggleSidebar()"
+          >
+            <svg
+              class="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+        </div>
+
+        <nav class="flex-1 overflow-y-auto py-4 px-3 space-y-0.5">
+          <p
+            class="px-3 text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2"
+          >
+            Général
+          </p>
+
+          <a
+            href="index.html"
+            class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600"
+          >
+            <svg
+              class="nav-icon w-[18px] h-[18px] text-slate-400"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+              />
+            </svg>
+            Dashboard
+          </a>
+
+          <a
+            href="conversations.html"
+            class="sidebar-link flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600"
+          >
+            <span class="flex items-center gap-3">
+              <svg
+                class="nav-icon w-[18px] h-[18px] text-slate-400"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.86 9.86 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                />
+              </svg>
+              Conversations
+            </span>
+            <span
+              class="bg-indigo-100 text-indigo-600 text-xs font-semibold px-1.5 py-0.5 rounded-md"
+              >12</span
+            >
+          </a>
+
+          <a
+            href="commandes.html"
+            class="sidebar-link active flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-700"
+          >
+            <svg
+              class="nav-icon w-[18px] h-[18px]"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
+              />
+            </svg>
+            Commandes
+          </a>
+
+          <a
+            href="reservations.html"
+            class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600"
+          >
+            <svg
+              class="nav-icon w-[18px] h-[18px] text-slate-400"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+              />
+            </svg>
+            Réservations
+          </a>
+
+          <a
+            href="notifications.html"
+            class="sidebar-link flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600"
+          >
+            <span class="flex items-center gap-3">
+              <svg
+                class="nav-icon w-[18px] h-[18px] text-slate-400"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+                />
+              </svg>
+              Notifications
+            </span>
+            <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+          </a>
+
+          <p
+            class="px-3 text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2 mt-5"
+          >
+            Pilotage
+          </p>
+
+          <a
+            href="analytics.html"
+            class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600"
+          >
+            <svg
+              class="nav-icon w-[18px] h-[18px] text-slate-400"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm6 0V9a2 2 0 00-2-2h-2a2 2 0 00-2 2v10a2 2 0 002 2h2a2 2 0 002-2zm6 0V5a2 2 0 00-2-2h-2a2 2 0 00-2 2v14a2 2 0 002 2h2a2 2 0 002-2z"
+              />
+            </svg>
+            Analytics
+          </a>
+
+          <a
+            href="settings.html"
+            class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600"
+          >
+            <svg
+              class="nav-icon w-[18px] h-[18px] text-slate-400"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+              />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+              />
+            </svg>
+            Paramètres IA
+          </a>
+        </nav>
+
+        <div class="p-3 border-t border-slate-100 flex-shrink-0">
+          <div
+            class="flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-slate-50 cursor-pointer transition-colors"
+          >
+            <img
+              src="https://i.pravatar.cc/40?img=12"
+              class="w-9 h-9 rounded-full ring-2 ring-white shadow-sm"
+              alt="Avatar admin"
+            />
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-semibold text-slate-700 truncate">
+                Sarah Lemoine
+              </p>
+              <p class="text-xs text-slate-400 truncate">Administratrice</p>
+            </div>
+            <svg
+              class="w-4 h-4 text-slate-300"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M8 9l4-4 4 4m0 6l-4 4-4-4"
+              />
+            </svg>
+          </div>
+        </div>
+      </aside>
+
+      <!-- ░░░ MAIN ░░░ -->
+      <div class="flex-1 flex flex-col overflow-hidden">
+        <!-- Topbar -->
+        <header
+          class="h-16 bg-white border-b border-slate-200 flex items-center gap-4 px-4 sm:px-6 flex-shrink-0"
+        >
+          <button class="lg:hidden text-slate-500" onclick="toggleSidebar()">
+            <svg
+              class="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M4 6h16M4 12h16M4 18h16"
+              />
+            </svg>
+          </button>
+          <div>
+            <h1 class="text-base font-semibold text-slate-800">Commandes</h1>
+            <p class="text-xs text-slate-400 hidden sm:block">
+              Suivez et gérez toutes les commandes clients
+            </p>
+          </div>
+          <div class="flex-1"></div>
+          <span
+            class="hidden sm:flex items-center gap-1.5 text-xs font-medium text-emerald-600 bg-emerald-50 px-2.5 py-1.5 rounded-full"
+          >
+            <span class="pulse-dot"></span> IA active
+          </span>
+          <button
+            class="relative p-2 rounded-xl hover:bg-slate-100 transition-colors text-slate-500"
+          >
+            <svg
+              class="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+              />
+            </svg>
+            <span
+              class="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full ring-2 ring-white"
+            ></span>
+          </button>
+          <img
+            src="https://i.pravatar.cc/36?img=12"
+            class="w-9 h-9 rounded-full ring-2 ring-slate-100 cursor-pointer"
+            alt="Avatar"
+          />
+        </header>
+
+        <!-- Scrollable content -->
+        <main class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 space-y-6">
+          <!-- Page heading -->
+          <div
+            class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 animate-fade-in"
+          >
+            <div>
+              <h1 class="text-2xl font-bold text-slate-900">Commandes</h1>
+              <p class="text-slate-500 text-sm mt-1">
+                86 commandes aujourd'hui — 4 en attente de confirmation
+              </p>
+            </div>
+            <button
+              onclick="openNewOrderModal()"
+              class="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white text-sm font-semibold px-4 py-2.5 rounded-xl shadow-sm hover:shadow-lg hover:shadow-indigo-200 transition-all"
+            >
+              <svg
+                class="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.2"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M12 4v16m8-8H4"
+                />
+              </svg>
+              Nouvelle commande
+            </button>
+          </div>
+
+          <!-- KPI mini cards -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 animate-slide-up">
+            <div class="bg-white rounded-2xl border border-slate-200 p-4">
+              <p class="text-xs text-slate-400 mb-1">Total aujourd'hui</p>
+              <p class="text-xl font-bold text-slate-900">86</p>
+            </div>
+            <div class="bg-white rounded-2xl border border-slate-200 p-4">
+              <p class="text-xs text-slate-400 mb-1">En attente</p>
+              <p class="text-xl font-bold text-amber-500">4</p>
+            </div>
+            <div class="bg-white rounded-2xl border border-slate-200 p-4">
+              <p class="text-xs text-slate-400 mb-1">En préparation</p>
+              <p class="text-xl font-bold text-blue-500">9</p>
+            </div>
+            <div class="bg-white rounded-2xl border border-slate-200 p-4">
+              <p class="text-xs text-slate-400 mb-1">Chiffre du jour</p>
+              <p class="text-xl font-bold text-emerald-600">2 340 €</p>
+            </div>
+          </div>
+
+          <!-- Toolbar : recherche + filtres + vue -->
+          <div
+            class="bg-white rounded-2xl border border-slate-200 p-4 animate-slide-up"
+          >
+            <div class="flex flex-col lg:flex-row lg:items-center gap-3">
+              <!-- Recherche -->
+              <div class="relative flex-1 max-w-sm">
+                <svg
+                  class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M21 21l-4.35-4.35M17 10a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
+                </svg>
+                <input
+                  id="search-input"
+                  type="text"
+                  placeholder="Rechercher client, n° commande…"
+                  class="w-full pl-10 pr-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-300 transition-all"
+                  oninput="renderOrders()"
+                />
+              </div>
+
+              <!-- Filtre statut -->
+              <select
+                id="status-filter"
+                class="text-sm font-medium text-slate-600 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                onchange="renderOrders()"
+              >
+                <option value="all">Tous les statuts</option>
+                <option value="pending">En attente</option>
+                <option value="preparing">En préparation</option>
+                <option value="ready">Prête</option>
+                <option value="delivered">Livrée</option>
+                <option value="cancelled">Annulée</option>
+              </select>
+
+              <!-- Filtre business -->
+              <select
+                id="business-filter"
+                class="text-sm font-medium text-slate-600 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                onchange="renderOrders()"
+              >
+                <option value="all">Tous les établissements</option>
+                <option value="Restaurant Le Bistrot">
+                  Restaurant Le Bistrot
+                </option>
+                <option value="Pharmacie Centrale">Pharmacie Centrale</option>
+                <option value="Hôtel Riviera">Hôtel Riviera</option>
+              </select>
+
+              <div class="flex-1"></div>
+
+              <!-- Toggle vue tableau / kanban -->
+              <div
+                class="flex items-center gap-1 bg-slate-100 rounded-xl p-1 self-start lg:self-auto"
+              >
+                <button
+                  id="view-table-btn"
+                  class="view-toggle-btn flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-white text-slate-700 shadow-sm"
+                  onclick="setView('table')"
+                >
+                  <svg
+                    class="w-3.5 h-3.5"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M4 6h16M4 12h16M4 18h16"
+                    />
+                  </svg>
+                  Tableau
+                </button>
+                <button
+                  id="view-kanban-btn"
+                  class="view-toggle-btn flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg text-slate-500"
+                  onclick="setView('kanban')"
+                >
+                  <svg
+                    class="w-3.5 h-3.5"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M4 6a2 2 0 012-2h2a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm8-2a2 2 0 012-2h2a2 2 0 012 2v6a2 2 0 01-2 2h-2a2 2 0 01-2-2V4z"
+                    />
+                  </svg>
+                  Kanban
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- ═══ VUE TABLEAU ═══ -->
+          <div
+            id="table-view"
+            class="bg-white rounded-2xl border border-slate-200 overflow-hidden animate-slide-up"
+          >
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead>
+                  <tr class="border-b border-slate-100 bg-slate-50/60">
+                    <th
+                      class="text-left font-semibold text-slate-500 text-xs uppercase tracking-wide px-5 py-3.5"
+                    >
+                      Commande
+                    </th>
+                    <th
+                      class="text-left font-semibold text-slate-500 text-xs uppercase tracking-wide px-5 py-3.5"
+                    >
+                      Client
+                    </th>
+                    <th
+                      class="text-left font-semibold text-slate-500 text-xs uppercase tracking-wide px-5 py-3.5 hidden md:table-cell"
+                    >
+                      Établissement
+                    </th>
+                    <th
+                      class="text-left font-semibold text-slate-500 text-xs uppercase tracking-wide px-5 py-3.5 hidden lg:table-cell"
+                    >
+                      Articles
+                    </th>
+                    <th
+                      class="text-left font-semibold text-slate-500 text-xs uppercase tracking-wide px-5 py-3.5"
+                    >
+                      Montant
+                    </th>
+                    <th
+                      class="text-left font-semibold text-slate-500 text-xs uppercase tracking-wide px-5 py-3.5"
+                    >
+                      Statut
+                    </th>
+                    <th
+                      class="text-left font-semibold text-slate-500 text-xs uppercase tracking-wide px-5 py-3.5 hidden sm:table-cell"
+                    >
+                      Heure
+                    </th>
+                    <th class="px-5 py-3.5"></th>
+                  </tr>
+                </thead>
+                <tbody id="orders-tbody">
+                  <!-- généré par JS -->
+                </tbody>
+              </table>
+            </div>
+            <div
+              id="empty-state"
+              class="hidden flex-col items-center justify-center py-16 text-center"
+            >
+              <div
+                class="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mb-3 mx-auto"
+              >
+                <svg
+                  class="w-6 h-6 text-slate-400"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M21 21l-4.35-4.35M17 10a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
+                </svg>
+              </div>
+              <p class="text-sm font-medium text-slate-500">
+                Aucune commande trouvée
+              </p>
+              <p class="text-xs text-slate-400 mt-1">
+                Essayez d'ajuster vos filtres de recherche
+              </p>
+            </div>
+          </div>
+
+          <!-- ═══ VUE KANBAN ═══ -->
+          <div
+            id="kanban-view"
+            class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 animate-slide-up pb-4"
+          >
+            <!-- généré par JS -->
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <!-- ░░░ MODAL : Détail commande ░░░ -->
+    <div
+      id="modal-backdrop"
+      class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+      onclick="if (event.target === this) closeModal();"
+    >
+      <div
+        class="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[85vh] overflow-y-auto animate-modal-in"
+      >
+        <div
+          class="flex items-center justify-between px-6 py-5 border-b border-slate-100 sticky top-0 bg-white"
+        >
+          <div>
+            <h3 id="modal-order-id" class="text-lg font-bold text-slate-900">
+              Commande #4821
+            </h3>
+            <p id="modal-order-time" class="text-xs text-slate-400 mt-0.5">
+              Aujourd'hui à 14:32
+            </p>
+          </div>
+          <button
+            onclick="closeModal()"
+            class="p-2 rounded-xl hover:bg-slate-100 text-slate-400 transition-colors"
+          >
+            <svg
+              class="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+        </div>
+
+        <div class="p-6 space-y-5">
+          <!-- Client -->
+          <div class="flex items-center gap-3">
+            <img
+              id="modal-avatar"
+              src=""
+              class="w-12 h-12 rounded-full"
+              alt=""
+            />
+            <div>
+              <p id="modal-client" class="text-sm font-semibold text-slate-800">
+                —
+              </p>
+              <p id="modal-business" class="text-xs text-slate-400">—</p>
+            </div>
+          </div>
+
+          <!-- Statut -->
+          <div>
+            <label
+              class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2"
+              >Statut de la commande</label
+            >
+            <select
+              id="modal-status-select"
+              class="status-select w-full text-sm font-medium bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+            >
+              <option value="pending">En attente</option>
+              <option value="preparing">En préparation</option>
+              <option value="ready">Prête</option>
+              <option value="delivered">Livrée</option>
+              <option value="cancelled">Annulée</option>
+            </select>
+          </div>
+
+          <!-- Articles -->
+          <div>
+            <label
+              class="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2"
+              >Articles commandés</label
+            >
+            <div id="modal-items" class="space-y-2 bg-slate-50 rounded-xl p-3">
+              <!-- généré par JS -->
+            </div>
+          </div>
+
+          <!-- Total -->
+          <div
+            class="flex items-center justify-between pt-3 border-t border-slate-100"
+          >
+            <span class="text-sm font-semibold text-slate-600">Total</span>
+            <span id="modal-total" class="text-lg font-bold text-slate-900"
+              >—</span
+            >
+          </div>
+        </div>
+
+        <div
+          class="flex gap-3 px-6 py-4 border-t border-slate-100 bg-slate-50/60 sticky bottom-0"
+        >
+          <button
+            onclick="closeModal()"
+            class="flex-1 text-sm font-semibold text-slate-600 bg-white border border-slate-200 rounded-xl py-2.5 hover:bg-slate-50 transition-colors"
+          >
+            Fermer
+          </button>
+          <button
+            onclick="saveModalStatus()"
+            class="flex-1 text-sm font-semibold text-white bg-gradient-to-r from-indigo-600 to-violet-600 rounded-xl py-2.5 hover:shadow-md transition-all"
+          >
+            Enregistrer
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ░░░ Toast confirmation ░░░ -->
+    <div
+      id="toast"
+      class="hidden fixed bottom-6 right-6 z-50 flex items-center gap-3 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-2xl animate-pop-in"
+    >
+      <svg
+        class="w-4 h-4 text-emerald-400"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2.5"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          d="M5 13l4 4L19 7"
+        />
+      </svg>
+      <span id="toast-text" class="text-sm font-medium">Statut mis à jour</span>
+    </div>
+
+    <script>
+      // ════════════════════════════════════════════════════════
+      // DONNÉES SIMULÉES
+      // ════════════════════════════════════════════════════════
+      let orders = [
+        {
+          id: 4821,
+          client: "Karim Bensalem",
+          avatar: "https://i.pravatar.cc/40?img=33",
+          business: "Restaurant Le Bistrot",
+          items: [
+            { name: "Couscous royal", qty: 2, price: 18 },
+            { name: "Thé à la menthe", qty: 2, price: 3 },
+          ],
+          status: "pending",
+          time: "14:32",
+        },
+        {
+          id: 4820,
+          client: "Léa Martin",
+          avatar: "https://i.pravatar.cc/40?img=47",
+          business: "Hôtel Riviera",
+          items: [{ name: "Room service — Petit-déjeuner", qty: 1, price: 24 }],
+          status: "preparing",
+          time: "14:10",
+        },
+        {
+          id: 4819,
+          client: "Inès Dubois",
+          avatar: "https://i.pravatar.cc/40?img=15",
+          business: "Pharmacie Centrale",
+          items: [
+            { name: "Paracétamol 1000mg", qty: 1, price: 4.5 },
+            { name: "Vitamine C", qty: 1, price: 7 },
+          ],
+          status: "ready",
+          time: "13:58",
+        },
+        {
+          id: 4818,
+          client: "Yacine Tahiri",
+          avatar: "https://i.pravatar.cc/40?img=22",
+          business: "Hôtel Riviera",
+          items: [{ name: "Suite Junior — 2 nuits", qty: 1, price: 360 }],
+          status: "delivered",
+          time: "13:40",
+        },
+        {
+          id: 4817,
+          client: "Sophie Laurent",
+          avatar: "https://i.pravatar.cc/40?img=44",
+          business: "Restaurant Le Bistrot",
+          items: [
+            { name: "Pizza Margherita", qty: 1, price: 12 },
+            { name: "Tiramisu", qty: 1, price: 6 },
+          ],
+          status: "delivered",
+          time: "13:22",
+        },
+        {
+          id: 4816,
+          client: "Mohamed Cherif",
+          avatar: "https://i.pravatar.cc/40?img=51",
+          business: "Pharmacie Centrale",
+          items: [{ name: "Sirop pour la toux", qty: 1, price: 8 }],
+          status: "cancelled",
+          time: "13:05",
+        },
+        {
+          id: 4815,
+          client: "Amine Rahmouni",
+          avatar: "https://i.pravatar.cc/40?img=8",
+          business: "Restaurant Le Bistrot",
+          items: [
+            { name: "Tajine poulet", qty: 1, price: 15 },
+            { name: "Salade marocaine", qty: 1, price: 6 },
+          ],
+          status: "preparing",
+          time: "12:50",
+        },
+        {
+          id: 4814,
+          client: "Nadia Bouzid",
+          avatar: "https://i.pravatar.cc/40?img=29",
+          business: "Hôtel Riviera",
+          items: [{ name: "Spa & massage 1h", qty: 1, price: 65 }],
+          status: "pending",
+          time: "12:30",
+        },
+        {
+          id: 4813,
+          client: "Thomas Garnier",
+          avatar: "https://i.pravatar.cc/40?img=14",
+          business: "Restaurant Le Bistrot",
+          items: [{ name: "Burger maison", qty: 2, price: 13 }],
+          status: "ready",
+          time: "12:15",
+        },
+        {
+          id: 4812,
+          client: "Fatima Zahra",
+          avatar: "https://i.pravatar.cc/40?img=31",
+          business: "Pharmacie Centrale",
+          items: [{ name: "Crème solaire SPF50", qty: 2, price: 11 }],
+          status: "delivered",
+          time: "11:58",
+        },
+      ];
+
+      const statusConfig = {
+        pending: {
+          label: "En attente",
+          classes: "text-amber-600 bg-amber-50",
+          dot: "bg-amber-500",
+        },
+        preparing: {
+          label: "En préparation",
+          classes: "text-blue-600 bg-blue-50",
+          dot: "bg-blue-500",
+        },
+        ready: {
+          label: "Prête",
+          classes: "text-violet-600 bg-violet-50",
+          dot: "bg-violet-500",
+        },
+        delivered: {
+          label: "Livrée",
+          classes: "text-emerald-600 bg-emerald-50",
+          dot: "bg-emerald-500",
+        },
+        cancelled: {
+          label: "Annulée",
+          classes: "text-rose-600 bg-rose-50",
+          dot: "bg-rose-500",
+        },
+      };
+
+      let currentView = "table";
+      let currentModalOrderId = null;
+
+      function orderTotal(order) {
+        return order.items.reduce((sum, i) => sum + i.qty * i.price, 0);
+      }
+
+      // ════════════════════════════════════════════════════════
+      // FILTRAGE
+      // ════════════════════════════════════════════════════════
+      function getFilteredOrders() {
+        const search = document
+          .getElementById("search-input")
+          .value.toLowerCase();
+        const statusF = document.getElementById("status-filter").value;
+        const businessF = document.getElementById("business-filter").value;
+
+        return orders.filter((o) => {
+          const matchSearch =
+            !search ||
+            o.client.toLowerCase().includes(search) ||
+            String(o.id).includes(search);
+          const matchStatus = statusF === "all" || o.status === statusF;
+          const matchBusiness = businessF === "all" || o.business === businessF;
+          return matchSearch && matchStatus && matchBusiness;
+        });
+      }
+
+      // ════════════════════════════════════════════════════════
+      // VUE TABLEAU
+      // ════════════════════════════════════════════════════════
+      function renderOrders() {
+        const filtered = getFilteredOrders();
+        const tbody = document.getElementById("orders-tbody");
+        const emptyState = document.getElementById("empty-state");
+
+        if (filtered.length === 0) {
+          tbody.innerHTML = "";
+          emptyState.classList.remove("hidden");
+          emptyState.classList.add("flex");
+        } else {
+          emptyState.classList.add("hidden");
+          emptyState.classList.remove("flex");
+
+          tbody.innerHTML = filtered
+            .map(
+              (o) => `
+          <tr class="row-hover border-b border-slate-50 cursor-pointer" onclick="openModal(${o.id})">
+            <td class="px-5 py-3.5 font-semibold text-slate-700">#${o.id}</td>
+            <td class="px-5 py-3.5">
+              <div class="flex items-center gap-2.5">
+                <img src="${o.avatar}" class="w-8 h-8 rounded-full" alt=""/>
+                <span class="text-slate-700">${o.client}</span>
+              </div>
+            </td>
+            <td class="px-5 py-3.5 text-slate-500 hidden md:table-cell">${o.business}</td>
+            <td class="px-5 py-3.5 text-slate-500 hidden lg:table-cell">${o.items.length} article${o.items.length > 1 ? "s" : ""}</td>
+            <td class="px-5 py-3.5 font-semibold text-slate-700">${orderTotal(o).toFixed(2)} €</td>
+            <td class="px-5 py-3.5">
+              <span class="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full ${statusConfig[o.status].classes}">
+                <span class="w-1.5 h-1.5 rounded-full ${statusConfig[o.status].dot}"></span>
+                ${statusConfig[o.status].label}
+              </span>
+            </td>
+            <td class="px-5 py-3.5 text-slate-400 hidden sm:table-cell">${o.time}</td>
+            <td class="px-5 py-3.5 text-right">
+              <svg class="w-4 h-4 text-slate-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+            </td>
+          </tr>
+        `,
+            )
+            .join("");
+        }
+
+        if (currentView === "kanban") renderKanban();
+      }
+
+      // ════════════════════════════════════════════════════════
+      // VUE KANBAN
+      // ════════════════════════════════════════════════════════
+      const kanbanColumns = ["pending", "preparing", "ready", "delivered"];
+
+      function renderKanban() {
+        const filtered = getFilteredOrders();
+        const container = document.getElementById("kanban-view");
+
+        container.innerHTML = kanbanColumns
+          .map((statusKey) => {
+            const colOrders = filtered.filter((o) => o.status === statusKey);
+            return `
+          <div class="kanban-col bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 p-3 flex flex-col min-h-[200px]" data-status="${statusKey}" ondragover="event.preventDefault(); this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="handleDrop(event, '${statusKey}')">
+            <div class="flex items-center justify-between px-1 mb-3">
+              <span class="flex items-center gap-2 text-sm font-semibold text-slate-600">
+                <span class="w-2 h-2 rounded-full ${statusConfig[statusKey].dot}"></span>
+                ${statusConfig[statusKey].label}
+              </span>
+              <span class="text-xs font-bold text-slate-400 bg-white px-2 py-0.5 rounded-full">${colOrders.length}</span>
+            </div>
+            <div class="space-y-2.5 flex-1">
+              ${
+                colOrders
+                  .map(
+                    (o) => `
+                <div class="kanban-card bg-white rounded-xl border border-slate-200 p-3.5" draggable="true" ondragstart="handleDragStart(event, ${o.id})" ondragend="this.classList.remove('dragging')" onclick="openModal(${o.id})">
+                  <div class="flex items-center justify-between mb-2">
+                    <span class="text-xs font-bold text-slate-400">#${o.id}</span>
+                    <span class="text-xs text-slate-400">${o.time}</span>
+                  </div>
+                  <div class="flex items-center gap-2 mb-2">
+                    <img src="${o.avatar}" class="w-6 h-6 rounded-full" alt=""/>
+                    <span class="text-sm font-medium text-slate-700 truncate">${o.client}</span>
+                  </div>
+                  <p class="text-xs text-slate-400 truncate mb-2">${o.business}</p>
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs text-slate-500">${o.items.length} article${o.items.length > 1 ? "s" : ""}</span>
+                    <span class="text-sm font-bold text-slate-800">${orderTotal(o).toFixed(2)} €</span>
+                  </div>
+                </div>
+              `,
+                  )
+                  .join("") ||
+                `<p class="text-xs text-slate-400 text-center py-6">Aucune commande</p>`
+              }
+            </div>
+          </div>
+        `;
+          })
+          .join("");
+      }
+
+      let draggedOrderId = null;
+      function handleDragStart(e, id) {
+        draggedOrderId = id;
+        e.target.classList.add("dragging");
+      }
+      function handleDrop(e, newStatus) {
+        e.preventDefault();
+        e.currentTarget.classList.remove("drag-over");
+        const order = orders.find((o) => o.id === draggedOrderId);
+        if (order) {
+          order.status = newStatus;
+          showToast(
+            `Commande #${order.id} déplacée vers "${statusConfig[newStatus].label}"`,
+          );
+          renderOrders();
+        }
+      }
+
+      // ════════════════════════════════════════════════════════
+      // TOGGLE VUE
+      // ════════════════════════════════════════════════════════
+      function setView(view) {
+        currentView = view;
+        const tableBtn = document.getElementById("view-table-btn");
+        const kanbanBtn = document.getElementById("view-kanban-btn");
+        const tableView = document.getElementById("table-view");
+        const kanbanView = document.getElementById("kanban-view");
+
+        if (view === "table") {
+          tableView.classList.remove("hidden");
+          kanbanView.classList.add("hidden");
+          tableBtn.classList.add("bg-white", "text-slate-700", "shadow-sm");
+          tableBtn.classList.remove("text-slate-500");
+          kanbanBtn.classList.remove("bg-white", "text-slate-700", "shadow-sm");
+          kanbanBtn.classList.add("text-slate-500");
+        } else {
+          tableView.classList.add("hidden");
+          kanbanView.classList.remove("hidden");
+          kanbanBtn.classList.add("bg-white", "text-slate-700", "shadow-sm");
+          kanbanBtn.classList.remove("text-slate-500");
+          tableBtn.classList.remove("bg-white", "text-slate-700", "shadow-sm");
+          tableBtn.classList.add("text-slate-500");
+          renderKanban();
+        }
+      }
+
+      // ════════════════════════════════════════════════════════
+      // MODAL DÉTAIL COMMANDE
+      // ════════════════════════════════════════════════════════
+      function openModal(id) {
+        const order = orders.find((o) => o.id === id);
+        if (!order) return;
+        currentModalOrderId = id;
+
+        document.getElementById("modal-order-id").textContent =
+          `Commande #${order.id}`;
+        document.getElementById("modal-order-time").textContent =
+          `Aujourd'hui à ${order.time}`;
+        document.getElementById("modal-avatar").src = order.avatar;
+        document.getElementById("modal-client").textContent = order.client;
+        document.getElementById("modal-business").textContent = order.business;
+        document.getElementById("modal-status-select").value = order.status;
+        document.getElementById("modal-total").textContent =
+          orderTotal(order).toFixed(2) + " €";
+
+        document.getElementById("modal-items").innerHTML = order.items
+          .map(
+            (i) => `
+        <div class="flex items-center justify-between text-sm">
+          <span class="text-slate-600">${i.qty}× ${i.name}</span>
+          <span class="font-medium text-slate-700">${(i.qty * i.price).toFixed(2)} €</span>
+        </div>
+      `,
+          )
+          .join("");
+
+        document.getElementById("modal-backdrop").classList.remove("hidden");
+      }
+
+      function closeModal() {
+        document.getElementById("modal-backdrop").classList.add("hidden");
+        currentModalOrderId = null;
+      }
+
+      function saveModalStatus() {
+        const order = orders.find((o) => o.id === currentModalOrderId);
+        const newStatus = document.getElementById("modal-status-select").value;
+        if (order) {
+          order.status = newStatus;
+          showToast(
+            `Commande #${order.id} mise à jour → ${statusConfig[newStatus].label}`,
+          );
+          renderOrders();
+        }
+        closeModal();
+      }
+
+      function openNewOrderModal() {
+        showToast("Création manuelle de commande — fonctionnalité à venir");
+      }
+
+      // ════════════════════════════════════════════════════════
+      // TOAST
+      // ════════════════════════════════════════════════════════
+      // showToast() est définie dans js/app.js
+
+      // ════════════════════════════════════════════════════════
+      // SIDEBAR MOBILE
+      // ════════════════════════════════════════════════════════
+      // toggleSidebar() est définie dans js/app.js
+
+      // ════════════════════════════════════════════════════════
+      // INIT
+      // ════════════════════════════════════════════════════════
+      renderOrders();
+    </script>
+  </body>
+</html>

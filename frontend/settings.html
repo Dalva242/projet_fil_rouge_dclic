@@ -1,0 +1,984 @@
+<!doctype html>
+<html lang="fr" class="h-full">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NexaDesk — Paramètres IA</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <!-- JS partagé entre toutes les pages : sidebar, toast, toggle, helpers -->
+    <script src="js/app.js"></script>
+    <style>
+      body {
+        font-family: "Inter", sans-serif;
+      }
+
+      .nav-link {
+        transition: background 0.15s;
+      }
+      .nav-link:hover {
+        background: rgba(99, 102, 241, 0.06);
+      }
+      .nav-link.active {
+        background: rgba(99, 102, 241, 0.1);
+        color: #4338ca;
+      }
+      .nav-link.active svg {
+        color: #4f46e5;
+      }
+
+      #sidebar {
+        transition: transform 0.25s ease;
+      }
+      @media (max-width: 1023px) {
+        #sidebar {
+          transform: translateX(-100%);
+        }
+        #sidebar.open {
+          transform: translateX(0);
+        }
+      }
+
+      ::-webkit-scrollbar {
+        width: 5px;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 10px;
+      }
+
+      .fade-up {
+        animation: fadeUp 0.35s ease-out;
+      }
+      @keyframes fadeUp {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .pulse {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: #22c55e;
+        animation: pulse 2s infinite;
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.5);
+        }
+        50% {
+          box-shadow: 0 0 0 6px rgba(34, 197, 94, 0);
+        }
+      }
+
+      /* Onglets de paramètres */
+      .tab-btn {
+        transition: all 0.15s;
+      }
+      .tab-panel {
+        display: none;
+      }
+      .tab-panel.active {
+        display: block;
+      }
+
+      /* Slider de température IA */
+      input[type="range"] {
+        accent-color: #6366f1;
+      }
+    </style>
+  </head>
+
+  <body class="h-full bg-slate-50 text-slate-800">
+    <div class="flex h-screen overflow-hidden">
+      <!-- Overlay mobile -->
+      <div
+        id="overlay"
+        class="hidden fixed inset-0 bg-black/40 z-30 lg:hidden"
+        onclick="closeSidebar()"
+      ></div>
+
+      <!-- ══════════════════════════════════════
+       SIDEBAR
+  ══════════════════════════════════════ -->
+      <aside
+        id="sidebar"
+        class="fixed lg:static z-40 inset-y-0 left-0 w-64 bg-white border-r border-slate-200 flex flex-col"
+      >
+        <div
+          class="h-16 flex items-center gap-3 px-5 border-b border-slate-100"
+        >
+          <div
+            class="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center"
+          >
+            <svg
+              class="w-5 h-5 text-white"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
+              />
+            </svg>
+          </div>
+          <span class="font-bold text-slate-800 text-base">NexaDesk</span>
+          <button
+            class="ml-auto lg:hidden text-slate-400"
+            onclick="closeSidebar()"
+          >
+            <svg
+              class="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+        </div>
+
+        <nav class="flex-1 py-4 px-3 space-y-0.5 overflow-y-auto">
+          <p
+            class="px-3 mb-2 text-[11px] font-semibold text-slate-400 uppercase tracking-wider"
+          >
+            Général
+          </p>
+
+          <a
+            href="index.html"
+            class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600"
+          >
+            <svg
+              class="w-5 h-5 text-slate-400"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+              />
+            </svg>
+            Dashboard
+          </a>
+
+          <a
+            href="conversations.html"
+            class="nav-link flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600"
+          >
+            <span class="flex items-center gap-3">
+              <svg
+                class="w-5 h-5 text-slate-400"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.86 9.86 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                />
+              </svg>
+              Conversations
+            </span>
+            <span
+              class="text-xs font-semibold bg-indigo-100 text-indigo-600 px-1.5 py-0.5 rounded-md"
+              >12</span
+            >
+          </a>
+
+          <a
+            href="commandes.html"
+            class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600"
+          >
+            <svg
+              class="w-5 h-5 text-slate-400"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
+              />
+            </svg>
+            Commandes
+          </a>
+
+          <a
+            href="reservations.html"
+            class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600"
+          >
+            <svg
+              class="w-5 h-5 text-slate-400"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+              />
+            </svg>
+            Réservations
+          </a>
+
+          <a
+            href="notifications.html"
+            class="nav-link flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600"
+          >
+            <span class="flex items-center gap-3">
+              <svg
+                class="w-5 h-5 text-slate-400"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+                />
+              </svg>
+              Notifications
+            </span>
+            <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+          </a>
+
+          <p
+            class="px-3 mt-5 mb-2 text-[11px] font-semibold text-slate-400 uppercase tracking-wider"
+          >
+            Pilotage
+          </p>
+
+          <a
+            href="analytics.html"
+            class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600"
+          >
+            <svg
+              class="w-5 h-5 text-slate-400"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm6 0V9a2 2 0 00-2-2h-2a2 2 0 00-2 2v10a2 2 0 002 2h2a2 2 0 002-2zm6 0V5a2 2 0 00-2-2h-2a2 2 0 00-2 2v14a2 2 0 002 2h2a2 2 0 002-2z"
+              />
+            </svg>
+            Analytics
+          </a>
+
+          <a
+            href="settings.html"
+            class="nav-link active flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium"
+          >
+            <svg
+              class="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+              />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+              />
+            </svg>
+            Paramètres IA
+          </a>
+        </nav>
+
+        <div class="p-3 border-t border-slate-100">
+          <div
+            class="flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-slate-50 cursor-pointer"
+          >
+            <img
+              src="https://i.pravatar.cc/40?img=12"
+              class="w-9 h-9 rounded-full"
+              alt="Sarah"
+            />
+            <div>
+              <p class="text-sm font-semibold text-slate-700">Sarah Lemoine</p>
+              <p class="text-xs text-slate-400">Administratrice</p>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- ══════════════════════════════════════
+       CONTENU PRINCIPAL
+  ══════════════════════════════════════ -->
+      <div class="flex-1 flex flex-col overflow-hidden">
+        <!-- Topbar -->
+        <header
+          class="h-16 bg-white border-b border-slate-200 flex items-center gap-4 px-4 sm:px-6"
+        >
+          <button class="lg:hidden text-slate-500" onclick="openSidebar()">
+            <svg
+              class="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M4 6h16M4 12h16M4 18h16"
+              />
+            </svg>
+          </button>
+          <div>
+            <h1 class="text-base font-semibold text-slate-800">
+              Paramètres IA
+            </h1>
+            <p class="text-xs text-slate-400 hidden sm:block">
+              Configurez le comportement de votre assistant
+            </p>
+          </div>
+          <div class="flex-1"></div>
+          <span
+            class="hidden sm:flex items-center gap-2 text-xs font-medium text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-full"
+          >
+            <span class="pulse"></span> IA active
+          </span>
+          <img
+            src="https://i.pravatar.cc/36?img=12"
+            class="w-9 h-9 rounded-full"
+            alt="Avatar"
+          />
+        </header>
+
+        <!-- Page scrollable -->
+        <main class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+          <!-- En-tête -->
+          <div class="mb-6 fade-up">
+            <h2 class="text-2xl font-bold text-slate-900">Paramètres IA</h2>
+            <p class="text-sm text-slate-500 mt-1">
+              Personnalisez le comportement, le ton et les limites de votre
+              assistant
+            </p>
+          </div>
+
+          <!-- ─── Onglets ─── -->
+          <!-- Concept Tailwind : flex + border-b-2 conditionnel pour l'onglet actif -->
+          <div
+            class="flex gap-1 border-b border-slate-200 mb-6 overflow-x-auto fade-up"
+            id="tabs"
+          >
+            <button
+              data-tab="general"
+              class="tab-btn active flex-shrink-0 text-sm font-semibold px-4 py-3 border-b-2 border-indigo-600 text-indigo-600"
+            >
+              Général
+            </button>
+            <button
+              data-tab="personality"
+              class="tab-btn flex-shrink-0 text-sm font-semibold px-4 py-3 border-b-2 border-transparent text-slate-500 hover:text-slate-700"
+            >
+              Personnalité
+            </button>
+            <button
+              data-tab="channels"
+              class="tab-btn flex-shrink-0 text-sm font-semibold px-4 py-3 border-b-2 border-transparent text-slate-500 hover:text-slate-700"
+            >
+              Canaux
+            </button>
+            <button
+              data-tab="team"
+              class="tab-btn flex-shrink-0 text-sm font-semibold px-4 py-3 border-b-2 border-transparent text-slate-500 hover:text-slate-700"
+            >
+              Équipe
+            </button>
+          </div>
+
+          <!-- ═══════════════ ONGLET 1 : GÉNÉRAL ═══════════════ -->
+          <div class="tab-panel active" id="panel-general">
+            <div class="space-y-5 max-w-2xl">
+              <!-- Carte : infos établissement -->
+              <div
+                class="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6"
+              >
+                <h3 class="text-base font-semibold text-slate-800 mb-4">
+                  Informations de l'établissement
+                </h3>
+
+                <div class="space-y-4">
+                  <div>
+                    <label
+                      class="block text-xs font-semibold text-slate-500 mb-1.5"
+                      >Nom de l'établissement</label
+                    >
+                    <input
+                      type="text"
+                      value="Restaurant Le Bistrot"
+                      class="w-full px-3 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                    />
+                  </div>
+
+                  <div>
+                    <label
+                      class="block text-xs font-semibold text-slate-500 mb-1.5"
+                      >Secteur d'activité</label
+                    >
+                    <select
+                      class="w-full px-3 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                    >
+                      <option>Restaurant</option>
+                      <option>Hôtel</option>
+                      <option>Pharmacie</option>
+                      <option>Autre PME</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label
+                      class="block text-xs font-semibold text-slate-500 mb-1.5"
+                      >Message d'accueil du chatbot</label
+                    >
+                    <textarea
+                      rows="3"
+                      class="w-full px-3 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-200 resize-none"
+                    >
+Bonjour 👋 Je suis l'assistant virtuel du Bistrot. Comment puis-je vous aider aujourd'hui ?</textarea
+                    >
+                  </div>
+                </div>
+              </div>
+
+              <!-- Carte : activation IA -->
+              <div
+                class="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6"
+              >
+                <h3 class="text-base font-semibold text-slate-800 mb-4">
+                  Activation de l'assistant
+                </h3>
+
+                <div
+                  class="flex items-center justify-between p-4 bg-slate-50 rounded-xl mb-3"
+                >
+                  <div>
+                    <p class="text-sm font-medium text-slate-700">
+                      Assistant IA activé
+                    </p>
+                    <p class="text-xs text-slate-400 mt-0.5">
+                      Le chatbot répond automatiquement aux clients
+                    </p>
+                  </div>
+                  <button
+                    onclick="toggleSwitch(this)"
+                    class="toggle-btn w-11 h-6 rounded-full bg-indigo-500 relative"
+                    data-on="true"
+                  >
+                    <span
+                      class="block w-4 h-4 bg-white rounded-full absolute top-1 right-1 shadow-sm"
+                    ></span>
+                  </button>
+                </div>
+
+                <div
+                  class="flex items-center justify-between p-4 bg-slate-50 rounded-xl"
+                >
+                  <div>
+                    <p class="text-sm font-medium text-slate-700">
+                      Transfert automatique vers agent
+                    </p>
+                    <p class="text-xs text-slate-400 mt-0.5">
+                      Si l'IA ne peut pas répondre après 2 tentatives
+                    </p>
+                  </div>
+                  <button
+                    onclick="toggleSwitch(this)"
+                    class="toggle-btn w-11 h-6 rounded-full bg-indigo-500 relative"
+                    data-on="true"
+                  >
+                    <span
+                      class="block w-4 h-4 bg-white rounded-full absolute top-1 right-1 shadow-sm"
+                    ></span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ═══════════════ ONGLET 2 : PERSONNALITÉ ═══════════════ -->
+          <div class="tab-panel" id="panel-personality">
+            <div class="space-y-5 max-w-2xl">
+              <!-- Ton de la conversation -->
+              <div
+                class="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6"
+              >
+                <h3 class="text-base font-semibold text-slate-800 mb-1">
+                  Ton de l'assistant
+                </h3>
+                <p class="text-xs text-slate-400 mb-4">
+                  Définit le style des réponses envoyées aux clients
+                </p>
+
+                <!-- 3 cartes sélectionnables -->
+                <div
+                  class="grid grid-cols-1 sm:grid-cols-3 gap-3"
+                  id="toneOptions"
+                >
+                  <div
+                    data-tone="formal"
+                    class="tone-card border-2 border-slate-200 rounded-xl p-4 cursor-pointer hover:border-indigo-300 transition-colors"
+                  >
+                    <p class="text-2xl mb-2">🎩</p>
+                    <p class="text-sm font-semibold text-slate-700">Formel</p>
+                    <p class="text-xs text-slate-400 mt-1">
+                      Vouvoiement, vocabulaire soutenu
+                    </p>
+                  </div>
+                  <div
+                    data-tone="friendly"
+                    class="tone-card border-2 border-indigo-500 bg-indigo-50/50 rounded-xl p-4 cursor-pointer transition-colors"
+                  >
+                    <p class="text-2xl mb-2">😊</p>
+                    <p class="text-sm font-semibold text-slate-700">Amical</p>
+                    <p class="text-xs text-slate-400 mt-1">
+                      Chaleureux, quelques emojis
+                    </p>
+                  </div>
+                  <div
+                    data-tone="casual"
+                    class="tone-card border-2 border-slate-200 rounded-xl p-4 cursor-pointer hover:border-indigo-300 transition-colors"
+                  >
+                    <p class="text-2xl mb-2">🤙</p>
+                    <p class="text-sm font-semibold text-slate-700">
+                      Décontracté
+                    </p>
+                    <p class="text-xs text-slate-400 mt-1">
+                      Tutoiement, ton très naturel
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Créativité (slider) -->
+              <div
+                class="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6"
+              >
+                <h3 class="text-base font-semibold text-slate-800 mb-1">
+                  Créativité des réponses
+                </h3>
+                <p class="text-xs text-slate-400 mb-4">
+                  Plus la valeur est haute, plus l'IA varie ses formulations
+                </p>
+
+                <div class="flex items-center gap-4">
+                  <span class="text-xs text-slate-400 flex-shrink-0"
+                    >Précis</span
+                  >
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value="40"
+                    id="creativitySlider"
+                    oninput="
+                      document.getElementById('creativityValue').textContent =
+                        this.value + '%'
+                    "
+                    class="flex-1 h-2 bg-slate-200 rounded-full appearance-none cursor-pointer"
+                  />
+                  <span class="text-xs text-slate-400 flex-shrink-0"
+                    >Créatif</span
+                  >
+                </div>
+                <p
+                  class="text-center text-sm font-semibold text-indigo-600 mt-2"
+                  id="creativityValue"
+                >
+                  40%
+                </p>
+              </div>
+
+              <!-- Langue -->
+              <div
+                class="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6"
+              >
+                <h3 class="text-base font-semibold text-slate-800 mb-4">
+                  Langue principale
+                </h3>
+                <select
+                  class="w-full px-3 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                >
+                  <option>🇫🇷 Français</option>
+                  <option>🇬🇧 Anglais</option>
+                  <option>🇸🇦 Arabe</option>
+                  <option>🌍 Détection automatique</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- ═══════════════ ONGLET 3 : CANAUX ═══════════════ -->
+          <div class="tab-panel" id="panel-channels">
+            <div class="space-y-3 max-w-2xl">
+              <!-- Canal WhatsApp -->
+              <div
+                class="bg-white rounded-2xl border border-slate-200 p-5 flex items-center gap-4"
+              >
+                <div
+                  class="w-11 h-11 rounded-xl bg-emerald-50 flex items-center justify-center flex-shrink-0"
+                >
+                  <svg
+                    class="w-5 h-5 text-emerald-500"
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-1.746-.873-2.888-1.56-4.035-3.54-.305-.524.305-.487.873-1.62.097-.198.05-.371-.05-.52-.099-.149-.67-1.612-.916-2.207-.247-.594-.495-.514-.67-.524-.173-.01-.372-.012-.571-.012-.198 0-.52.075-.792.372-.273.297-1.04 1.016-1.04 2.479s1.064 2.876 1.213 3.074c.149.198 2.057 3.13 4.987 4.27 2.93 1.14 2.93.76 3.882.654.95-.108 1.81-.99 2.082-1.94.273-.95.273-1.764.149-1.94-.124-.173-.297-.198-.57-.347z"
+                    />
+                  </svg>
+                </div>
+                <div class="flex-1">
+                  <p class="text-sm font-semibold text-slate-700">
+                    WhatsApp Business
+                  </p>
+                  <p
+                    class="text-xs text-emerald-600 flex items-center gap-1 mt-0.5"
+                  >
+                    <span
+                      class="w-1.5 h-1.5 rounded-full bg-emerald-500"
+                    ></span>
+                    Connecté
+                  </p>
+                </div>
+                <button
+                  onclick="toggleSwitch(this)"
+                  class="toggle-btn w-11 h-6 rounded-full bg-indigo-500 relative flex-shrink-0"
+                  data-on="true"
+                >
+                  <span
+                    class="block w-4 h-4 bg-white rounded-full absolute top-1 right-1 shadow-sm"
+                  ></span>
+                </button>
+              </div>
+
+              <!-- Canal Site web -->
+              <div
+                class="bg-white rounded-2xl border border-slate-200 p-5 flex items-center gap-4"
+              >
+                <div
+                  class="w-11 h-11 rounded-xl bg-indigo-50 flex items-center justify-center flex-shrink-0"
+                >
+                  <svg
+                    class="w-5 h-5 text-indigo-500"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                    />
+                  </svg>
+                </div>
+                <div class="flex-1">
+                  <p class="text-sm font-semibold text-slate-700">
+                    Widget site web
+                  </p>
+                  <p
+                    class="text-xs text-emerald-600 flex items-center gap-1 mt-0.5"
+                  >
+                    <span
+                      class="w-1.5 h-1.5 rounded-full bg-emerald-500"
+                    ></span>
+                    Connecté
+                  </p>
+                </div>
+                <button
+                  onclick="toggleSwitch(this)"
+                  class="toggle-btn w-11 h-6 rounded-full bg-indigo-500 relative flex-shrink-0"
+                  data-on="true"
+                >
+                  <span
+                    class="block w-4 h-4 bg-white rounded-full absolute top-1 right-1 shadow-sm"
+                  ></span>
+                </button>
+              </div>
+
+              <!-- Canal Messenger -->
+              <div
+                class="bg-white rounded-2xl border border-slate-200 p-5 flex items-center gap-4"
+              >
+                <div
+                  class="w-11 h-11 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0"
+                >
+                  <svg
+                    class="w-5 h-5 text-blue-500"
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      d="M9.198 21.5h4.604c.566 0 1.069-.359 1.255-.896l1.964-5.591a.5.5 0 01.471-.334H21a.5.5 0 00.498-.553L20.5 3.5a.5.5 0 00-.498-.447H4a.5.5 0 00-.498.553l1 9.5a.5.5 0 00.498.447h2.508a.5.5 0 01.471.334l1.964 5.591c.186.537.689.896 1.255.896z"
+                    />
+                  </svg>
+                </div>
+                <div class="flex-1">
+                  <p class="text-sm font-semibold text-slate-700">Messenger</p>
+                  <p
+                    class="text-xs text-amber-600 flex items-center gap-1 mt-0.5"
+                  >
+                    <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                    Non connecté
+                  </p>
+                </div>
+                <button
+                  class="text-xs font-semibold text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-lg hover:bg-indigo-100 transition-colors flex-shrink-0"
+                >
+                  Connecter
+                </button>
+              </div>
+
+              <!-- Canal Email -->
+              <div
+                class="bg-white rounded-2xl border border-slate-200 p-5 flex items-center gap-4"
+              >
+                <div
+                  class="w-11 h-11 rounded-xl bg-slate-100 flex items-center justify-center flex-shrink-0"
+                >
+                  <svg
+                    class="w-5 h-5 text-slate-400"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                    />
+                  </svg>
+                </div>
+                <div class="flex-1">
+                  <p class="text-sm font-semibold text-slate-700">Email</p>
+                  <p
+                    class="text-xs text-amber-600 flex items-center gap-1 mt-0.5"
+                  >
+                    <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                    Non connecté
+                  </p>
+                </div>
+                <button
+                  class="text-xs font-semibold text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-lg hover:bg-indigo-100 transition-colors flex-shrink-0"
+                >
+                  Connecter
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- ═══════════════ ONGLET 4 : ÉQUIPE ═══════════════ -->
+          <div class="tab-panel" id="panel-team">
+            <div class="max-w-2xl">
+              <div
+                class="bg-white rounded-2xl border border-slate-200 overflow-hidden"
+              >
+                <div
+                  class="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-slate-100"
+                >
+                  <h3 class="text-base font-semibold text-slate-800">
+                    Membres de l'équipe
+                  </h3>
+                  <button
+                    class="text-xs font-semibold text-white bg-gradient-to-r from-indigo-600 to-violet-600 px-3 py-2 rounded-xl hover:opacity-90 transition-opacity"
+                  >
+                    + Inviter
+                  </button>
+                </div>
+
+                <div class="divide-y divide-slate-50">
+                  <div class="flex items-center gap-3 px-5 sm:px-6 py-4">
+                    <img
+                      src="https://i.pravatar.cc/40?img=12"
+                      class="w-10 h-10 rounded-full"
+                      alt=""
+                    />
+                    <div class="flex-1">
+                      <p class="text-sm font-semibold text-slate-700">
+                        Sarah Lemoine
+                      </p>
+                      <p class="text-xs text-slate-400">sarah@nexadesk.io</p>
+                    </div>
+                    <span
+                      class="text-xs font-semibold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-full"
+                      >Administratrice</span
+                    >
+                  </div>
+
+                  <div class="flex items-center gap-3 px-5 sm:px-6 py-4">
+                    <img
+                      src="https://i.pravatar.cc/40?img=8"
+                      class="w-10 h-10 rounded-full"
+                      alt=""
+                    />
+                    <div class="flex-1">
+                      <p class="text-sm font-semibold text-slate-700">
+                        Amine Rahmouni
+                      </p>
+                      <p class="text-xs text-slate-400">amine@nexadesk.io</p>
+                    </div>
+                    <span
+                      class="text-xs font-semibold text-slate-600 bg-slate-100 px-2.5 py-1 rounded-full"
+                      >Agent</span
+                    >
+                  </div>
+
+                  <div class="flex items-center gap-3 px-5 sm:px-6 py-4">
+                    <img
+                      src="https://i.pravatar.cc/40?img=44"
+                      class="w-10 h-10 rounded-full"
+                      alt=""
+                    />
+                    <div class="flex-1">
+                      <p class="text-sm font-semibold text-slate-700">
+                        Sophie Laurent
+                      </p>
+                      <p class="text-xs text-slate-400">sophie@nexadesk.io</p>
+                    </div>
+                    <span
+                      class="text-xs font-semibold text-slate-600 bg-slate-100 px-2.5 py-1 rounded-full"
+                      >Agent</span
+                    >
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ─── Bouton sauvegarde global ─── -->
+          <div class="max-w-2xl mt-6 flex justify-end fade-up">
+            <button
+              onclick="saveSettings()"
+              class="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-violet-600 text-white text-sm font-semibold px-5 py-2.5 rounded-xl hover:opacity-90 transition-opacity shadow-sm"
+            >
+              <svg
+                class="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M5 13l4 4L19 7"
+                />
+              </svg>
+              Enregistrer les modifications
+            </button>
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <!-- Toast -->
+    <div
+      id="toast"
+      class="hidden fixed bottom-6 right-6 z-50 flex items-center gap-2 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-xl text-sm font-medium"
+    >
+      <svg
+        class="w-4 h-4 text-emerald-400"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2.5"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          d="M5 13l4 4L19 7"
+        />
+      </svg>
+      <span id="toastText">Paramètres enregistrés</span>
+    </div>
+
+    <script>
+      // ── Gestion des onglets ───────────────────────────────
+      // Concept simple : on cache tous les panels, on affiche celui demandé
+      document.getElementById("tabs").addEventListener("click", (e) => {
+        const btn = e.target.closest(".tab-btn");
+        if (!btn) return;
+
+        const tabName = btn.dataset.tab;
+
+        // Reset visuel des boutons d'onglet
+        document.querySelectorAll(".tab-btn").forEach((b) => {
+          b.classList.remove("active", "border-indigo-600", "text-indigo-600");
+          b.classList.add("border-transparent", "text-slate-500");
+        });
+        btn.classList.add("active", "border-indigo-600", "text-indigo-600");
+        btn.classList.remove("border-transparent", "text-slate-500");
+
+        // Affiche le bon panel, cache les autres
+        document
+          .querySelectorAll(".tab-panel")
+          .forEach((p) => p.classList.remove("active"));
+        document.getElementById("panel-" + tabName).classList.add("active");
+      });
+
+      // ── Sélection du ton de personnalité ──────────────────
+      document.getElementById("toneOptions").addEventListener("click", (e) => {
+        const card = e.target.closest(".tone-card");
+        if (!card) return;
+
+        document.querySelectorAll(".tone-card").forEach((c) => {
+          c.classList.remove("border-indigo-500", "bg-indigo-50/50");
+          c.classList.add("border-slate-200");
+        });
+        card.classList.add("border-indigo-500", "bg-indigo-50/50");
+        card.classList.remove("border-slate-200");
+      });
+
+      // ── Sauvegarde globale (simulation) ───────────────────
+      function saveSettings() {
+        showToast("Paramètres enregistrés avec succès ✓");
+      }
+
+      // toggleSwitch(), showToast(), openSidebar() et closeSidebar()
+      // sont définies dans js/app.js et réutilisées ici.
+    </script>
+  </body>
+</html>

@@ -1,0 +1,842 @@
+<!doctype html>
+<html lang="fr" class="h-full">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NexaDesk — Analytics</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <!-- JS partagé entre toutes les pages : sidebar, toast, toggle, helpers -->
+    <script src="js/app.js"></script>
+    <style>
+      body {
+        font-family: "Inter", sans-serif;
+      }
+
+      .nav-link {
+        transition: background 0.15s;
+      }
+      .nav-link:hover {
+        background: rgba(99, 102, 241, 0.06);
+      }
+      .nav-link.active {
+        background: rgba(99, 102, 241, 0.1);
+        color: #4338ca;
+      }
+      .nav-link.active svg {
+        color: #4f46e5;
+      }
+
+      #sidebar {
+        transition: transform 0.25s ease;
+      }
+      @media (max-width: 1023px) {
+        #sidebar {
+          transform: translateX(-100%);
+        }
+        #sidebar.open {
+          transform: translateX(0);
+        }
+      }
+
+      ::-webkit-scrollbar {
+        width: 5px;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 10px;
+      }
+
+      .fade-up {
+        animation: fadeUp 0.35s ease-out;
+      }
+      @keyframes fadeUp {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .pulse {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: #22c55e;
+        animation: pulse 2s infinite;
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.5);
+        }
+        50% {
+          box-shadow: 0 0 0 6px rgba(34, 197, 94, 0);
+        }
+      }
+
+      /* Barres du graphique : transition de hauteur animée */
+      .bar {
+        transition: height 0.6s ease-out;
+      }
+
+      .period-btn {
+        transition: all 0.15s;
+      }
+    </style>
+  </head>
+
+  <body class="h-full bg-slate-50 text-slate-800">
+    <div class="flex h-screen overflow-hidden">
+      <!-- Overlay mobile -->
+      <div
+        id="overlay"
+        class="hidden fixed inset-0 bg-black/40 z-30 lg:hidden"
+        onclick="closeSidebar()"
+      ></div>
+
+      <!-- ══════════════════════════════════════
+       SIDEBAR
+  ══════════════════════════════════════ -->
+      <aside
+        id="sidebar"
+        class="fixed lg:static z-40 inset-y-0 left-0 w-64 bg-white border-r border-slate-200 flex flex-col"
+      >
+        <div
+          class="h-16 flex items-center gap-3 px-5 border-b border-slate-100"
+        >
+          <div
+            class="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center"
+          >
+            <svg
+              class="w-5 h-5 text-white"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
+              />
+            </svg>
+          </div>
+          <span class="font-bold text-slate-800 text-base">NexaDesk</span>
+          <button
+            class="ml-auto lg:hidden text-slate-400"
+            onclick="closeSidebar()"
+          >
+            <svg
+              class="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+        </div>
+
+        <nav class="flex-1 py-4 px-3 space-y-0.5 overflow-y-auto">
+          <p
+            class="px-3 mb-2 text-[11px] font-semibold text-slate-400 uppercase tracking-wider"
+          >
+            Général
+          </p>
+
+          <a
+            href="index.html"
+            class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600"
+          >
+            <svg
+              class="w-5 h-5 text-slate-400"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+              />
+            </svg>
+            Dashboard
+          </a>
+
+          <a
+            href="conversations.html"
+            class="nav-link flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600"
+          >
+            <span class="flex items-center gap-3">
+              <svg
+                class="w-5 h-5 text-slate-400"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.86 9.86 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                />
+              </svg>
+              Conversations
+            </span>
+            <span
+              class="text-xs font-semibold bg-indigo-100 text-indigo-600 px-1.5 py-0.5 rounded-md"
+              >12</span
+            >
+          </a>
+
+          <a
+            href="commandes.html"
+            class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600"
+          >
+            <svg
+              class="w-5 h-5 text-slate-400"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
+              />
+            </svg>
+            Commandes
+          </a>
+
+          <a
+            href="reservations.html"
+            class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600"
+          >
+            <svg
+              class="w-5 h-5 text-slate-400"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+              />
+            </svg>
+            Réservations
+          </a>
+
+          <a
+            href="notifications.html"
+            class="nav-link flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600"
+          >
+            <span class="flex items-center gap-3">
+              <svg
+                class="w-5 h-5 text-slate-400"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+                />
+              </svg>
+              Notifications
+            </span>
+            <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+          </a>
+
+          <p
+            class="px-3 mt-5 mb-2 text-[11px] font-semibold text-slate-400 uppercase tracking-wider"
+          >
+            Pilotage
+          </p>
+
+          <a
+            href="analytics.html"
+            class="nav-link active flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium"
+          >
+            <svg
+              class="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm6 0V9a2 2 0 00-2-2h-2a2 2 0 00-2 2v10a2 2 0 002 2h2a2 2 0 002-2zm6 0V5a2 2 0 00-2-2h-2a2 2 0 00-2 2v14a2 2 0 002 2h2a2 2 0 002-2z"
+              />
+            </svg>
+            Analytics
+          </a>
+
+          <a
+            href="settings.html"
+            class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600"
+          >
+            <svg
+              class="w-5 h-5 text-slate-400"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+              />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+              />
+            </svg>
+            Paramètres IA
+          </a>
+        </nav>
+
+        <div class="p-3 border-t border-slate-100">
+          <div
+            class="flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-slate-50 cursor-pointer"
+          >
+            <img
+              src="https://i.pravatar.cc/40?img=12"
+              class="w-9 h-9 rounded-full"
+              alt="Sarah"
+            />
+            <div>
+              <p class="text-sm font-semibold text-slate-700">Sarah Lemoine</p>
+              <p class="text-xs text-slate-400">Administratrice</p>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- ══════════════════════════════════════
+       CONTENU PRINCIPAL
+  ══════════════════════════════════════ -->
+      <div class="flex-1 flex flex-col overflow-hidden">
+        <!-- Topbar -->
+        <header
+          class="h-16 bg-white border-b border-slate-200 flex items-center gap-4 px-4 sm:px-6"
+        >
+          <button class="lg:hidden text-slate-500" onclick="openSidebar()">
+            <svg
+              class="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M4 6h16M4 12h16M4 18h16"
+              />
+            </svg>
+          </button>
+          <div>
+            <h1 class="text-base font-semibold text-slate-800">Analytics</h1>
+            <p class="text-xs text-slate-400 hidden sm:block">
+              Statistiques et performance de votre assistant IA
+            </p>
+          </div>
+          <div class="flex-1"></div>
+          <span
+            class="hidden sm:flex items-center gap-2 text-xs font-medium text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-full"
+          >
+            <span class="pulse"></span> IA active
+          </span>
+          <img
+            src="https://i.pravatar.cc/36?img=12"
+            class="w-9 h-9 rounded-full"
+            alt="Avatar"
+          />
+        </header>
+
+        <!-- Page scrollable -->
+        <main class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 space-y-6">
+          <!-- En-tête + sélecteur de période -->
+          <div
+            class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 fade-up"
+          >
+            <div>
+              <h2 class="text-2xl font-bold text-slate-900">Analytics</h2>
+              <p class="text-sm text-slate-500 mt-1">
+                Vue d'ensemble de la performance sur la période sélectionnée
+              </p>
+            </div>
+
+            <!-- Sélecteur période : 3 boutons simples -->
+            <div
+              class="flex items-center gap-1 bg-white border border-slate-200 rounded-xl p-1"
+            >
+              <button
+                data-period="7"
+                class="period-btn active text-xs font-semibold px-3 py-1.5 rounded-lg bg-indigo-600 text-white"
+              >
+                7 jours
+              </button>
+              <button
+                data-period="30"
+                class="period-btn text-xs font-semibold px-3 py-1.5 rounded-lg text-slate-500 hover:bg-slate-50"
+              >
+                30 jours
+              </button>
+              <button
+                data-period="90"
+                class="period-btn text-xs font-semibold px-3 py-1.5 rounded-lg text-slate-500 hover:bg-slate-50"
+              >
+                90 jours
+              </button>
+            </div>
+          </div>
+
+          <!-- ─── KPIs principaux ─── -->
+          <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 fade-up">
+            <div class="bg-white rounded-2xl border border-slate-200 p-5">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs text-slate-400"
+                  >Conversations totales</span
+                >
+                <span
+                  class="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full"
+                  >+18%</span
+                >
+              </div>
+              <p
+                id="kpi-conversations"
+                class="text-2xl font-bold text-slate-900"
+              >
+                2 184
+              </p>
+            </div>
+
+            <div class="bg-white rounded-2xl border border-slate-200 p-5">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs text-slate-400">Taux résolution IA</span>
+                <span
+                  class="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full"
+                  >+5%</span
+                >
+              </div>
+              <p id="kpi-resolution" class="text-2xl font-bold text-slate-900">
+                94%
+              </p>
+            </div>
+
+            <div class="bg-white rounded-2xl border border-slate-200 p-5">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs text-slate-400"
+                  >Temps de réponse moyen</span
+                >
+                <span
+                  class="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full"
+                  >-12%</span
+                >
+              </div>
+              <p id="kpi-temps" class="text-2xl font-bold text-slate-900">
+                8 sec
+              </p>
+            </div>
+
+            <div class="bg-white rounded-2xl border border-slate-200 p-5">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs text-slate-400">Satisfaction client</span>
+                <span
+                  class="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full"
+                  >+2%</span
+                >
+              </div>
+              <p
+                id="kpi-satisfaction"
+                class="text-2xl font-bold text-slate-900"
+              >
+                4.7/5
+              </p>
+            </div>
+          </div>
+
+          <!-- ─── Graphique principal : volume de conversations ─── -->
+          <!-- Concept Tailwind : flex items-end + height en % pour simuler un bar chart -->
+          <div
+            class="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 fade-up"
+          >
+            <div class="flex items-center justify-between mb-6">
+              <div>
+                <h3 class="text-base font-semibold text-slate-800">
+                  Volume de conversations
+                </h3>
+                <p class="text-xs text-slate-400 mt-0.5">
+                  Nombre de conversations traitées par jour
+                </p>
+              </div>
+              <div class="flex items-center gap-4 text-xs">
+                <span class="flex items-center gap-1.5 text-slate-500"
+                  ><span class="w-2.5 h-2.5 rounded-sm bg-indigo-500"></span
+                  >Résolues par l'IA</span
+                >
+                <span class="flex items-center gap-1.5 text-slate-500"
+                  ><span class="w-2.5 h-2.5 rounded-sm bg-slate-200"></span
+                  >Transférées</span
+                >
+              </div>
+            </div>
+
+            <div
+              class="flex items-end justify-between gap-2 sm:gap-3 h-52"
+              id="mainChart"
+            ></div>
+            <div class="flex justify-between mt-3" id="mainChartLabels"></div>
+          </div>
+
+          <!-- ─── Grille : canaux + top questions ─── -->
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <!-- Répartition par canal -->
+            <div
+              class="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 fade-up"
+            >
+              <h3 class="text-base font-semibold text-slate-800 mb-5">
+                Conversations par canal
+              </h3>
+
+              <div class="space-y-4">
+                <div>
+                  <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-sm text-slate-600">WhatsApp</span>
+                    <span class="text-sm font-semibold text-slate-700"
+                      >48%</span
+                    >
+                  </div>
+                  <div
+                    class="w-full h-2 bg-slate-100 rounded-full overflow-hidden"
+                  >
+                    <div
+                      class="h-full bg-emerald-500 rounded-full"
+                      style="width: 48%"
+                    ></div>
+                  </div>
+                </div>
+                <div>
+                  <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-sm text-slate-600">Site web</span>
+                    <span class="text-sm font-semibold text-slate-700"
+                      >31%</span
+                    >
+                  </div>
+                  <div
+                    class="w-full h-2 bg-slate-100 rounded-full overflow-hidden"
+                  >
+                    <div
+                      class="h-full bg-indigo-500 rounded-full"
+                      style="width: 31%"
+                    ></div>
+                  </div>
+                </div>
+                <div>
+                  <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-sm text-slate-600">Messenger</span>
+                    <span class="text-sm font-semibold text-slate-700"
+                      >14%</span
+                    >
+                  </div>
+                  <div
+                    class="w-full h-2 bg-slate-100 rounded-full overflow-hidden"
+                  >
+                    <div
+                      class="h-full bg-blue-500 rounded-full"
+                      style="width: 14%"
+                    ></div>
+                  </div>
+                </div>
+                <div>
+                  <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-sm text-slate-600">Email</span>
+                    <span class="text-sm font-semibold text-slate-700">7%</span>
+                  </div>
+                  <div
+                    class="w-full h-2 bg-slate-100 rounded-full overflow-hidden"
+                  >
+                    <div
+                      class="h-full bg-slate-400 rounded-full"
+                      style="width: 7%"
+                    ></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Top questions fréquentes -->
+            <div
+              class="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 fade-up"
+            >
+              <h3 class="text-base font-semibold text-slate-800 mb-5">
+                Questions les plus fréquentes
+              </h3>
+
+              <div class="space-y-3">
+                <div class="flex items-center justify-between">
+                  <span class="text-sm text-slate-600 flex items-center gap-2">
+                    <span
+                      class="w-5 h-5 rounded-md bg-indigo-100 text-indigo-600 text-xs font-bold flex items-center justify-center"
+                      >1</span
+                    >
+                    Quels sont vos horaires d'ouverture ?
+                  </span>
+                  <span class="text-sm font-semibold text-slate-700">312</span>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="text-sm text-slate-600 flex items-center gap-2">
+                    <span
+                      class="w-5 h-5 rounded-md bg-indigo-100 text-indigo-600 text-xs font-bold flex items-center justify-center"
+                      >2</span
+                    >
+                    Comment annuler ma réservation ?
+                  </span>
+                  <span class="text-sm font-semibold text-slate-700">248</span>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="text-sm text-slate-600 flex items-center gap-2">
+                    <span
+                      class="w-5 h-5 rounded-md bg-indigo-100 text-indigo-600 text-xs font-bold flex items-center justify-center"
+                      >3</span
+                    >
+                    Avez-vous ce produit en stock ?
+                  </span>
+                  <span class="text-sm font-semibold text-slate-700">197</span>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="text-sm text-slate-600 flex items-center gap-2">
+                    <span
+                      class="w-5 h-5 rounded-md bg-indigo-100 text-indigo-600 text-xs font-bold flex items-center justify-center"
+                      >4</span
+                    >
+                    Quel est le prix de la livraison ?
+                  </span>
+                  <span class="text-sm font-semibold text-slate-700">156</span>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="text-sm text-slate-600 flex items-center gap-2">
+                    <span
+                      class="w-5 h-5 rounded-md bg-indigo-100 text-indigo-600 text-xs font-bold flex items-center justify-center"
+                      >5</span
+                    >
+                    Acceptez-vous les paiements en ligne ?
+                  </span>
+                  <span class="text-sm font-semibold text-slate-700">134</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ─── Performance par établissement ─── -->
+          <!-- Concept Tailwind : table simple, déjà vu sur les autres pages -->
+          <div
+            class="bg-white rounded-2xl border border-slate-200 overflow-hidden fade-up"
+          >
+            <div class="px-5 sm:px-6 py-4 border-b border-slate-100">
+              <h3 class="text-base font-semibold text-slate-800">
+                Performance par établissement
+              </h3>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead class="bg-slate-50 border-b border-slate-200">
+                  <tr>
+                    <th
+                      class="text-left text-xs font-semibold text-slate-500 uppercase tracking-wide px-5 py-3"
+                    >
+                      Établissement
+                    </th>
+                    <th
+                      class="text-left text-xs font-semibold text-slate-500 uppercase tracking-wide px-5 py-3"
+                    >
+                      Conversations
+                    </th>
+                    <th
+                      class="text-left text-xs font-semibold text-slate-500 uppercase tracking-wide px-5 py-3 hidden sm:table-cell"
+                    >
+                      Taux résolution IA
+                    </th>
+                    <th
+                      class="text-left text-xs font-semibold text-slate-500 uppercase tracking-wide px-5 py-3 hidden md:table-cell"
+                    >
+                      Satisfaction
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="border-b border-slate-50">
+                    <td class="px-5 py-3.5 font-medium text-slate-700">
+                      Restaurant Le Bistrot
+                    </td>
+                    <td class="px-5 py-3.5 text-slate-600">892</td>
+                    <td class="px-5 py-3.5 hidden sm:table-cell">
+                      <span class="text-emerald-600 font-semibold">96%</span>
+                    </td>
+                    <td class="px-5 py-3.5 hidden md:table-cell text-slate-600">
+                      ⭐ 4.8/5
+                    </td>
+                  </tr>
+                  <tr class="border-b border-slate-50">
+                    <td class="px-5 py-3.5 font-medium text-slate-700">
+                      Hôtel Riviera
+                    </td>
+                    <td class="px-5 py-3.5 text-slate-600">654</td>
+                    <td class="px-5 py-3.5 hidden sm:table-cell">
+                      <span class="text-emerald-600 font-semibold">91%</span>
+                    </td>
+                    <td class="px-5 py-3.5 hidden md:table-cell text-slate-600">
+                      ⭐ 4.6/5
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="px-5 py-3.5 font-medium text-slate-700">
+                      Pharmacie Centrale
+                    </td>
+                    <td class="px-5 py-3.5 text-slate-600">638</td>
+                    <td class="px-5 py-3.5 hidden sm:table-cell">
+                      <span class="text-amber-600 font-semibold">88%</span>
+                    </td>
+                    <td class="px-5 py-3.5 hidden md:table-cell text-slate-600">
+                      ⭐ 4.7/5
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <script>
+      // ── Données simulées par période (clé = nombre de jours) ──
+      // Chaque période a ses propres données de graphique + KPIs
+      const DATASETS = {
+        7: {
+          labels: ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"],
+          resolved: [38, 52, 41, 67, 73, 29, 18],
+          transferred: [4, 6, 5, 8, 9, 3, 2],
+          kpis: {
+            conversations: "2 184",
+            resolution: "94%",
+            temps: "8 sec",
+            satisfaction: "4.7/5",
+          },
+        },
+        30: {
+          labels: ["S1", "S2", "S3", "S4"],
+          resolved: [620, 705, 680, 740],
+          transferred: [55, 62, 58, 65],
+          kpis: {
+            conversations: "8 920",
+            resolution: "92%",
+            temps: "9 sec",
+            satisfaction: "4.6/5",
+          },
+        },
+        90: {
+          labels: ["Mois 1", "Mois 2", "Mois 3"],
+          resolved: [2400, 2680, 2950],
+          transferred: [210, 230, 245],
+          kpis: {
+            conversations: "26 540",
+            resolution: "91%",
+            temps: "10 sec",
+            satisfaction: "4.6/5",
+          },
+        },
+      };
+
+      // ── Rendu du graphique principal (barres empilées simplifiées) ──
+      function renderChart(period) {
+        const data = DATASETS[period];
+        const chart = document.getElementById("mainChart");
+        const labels = document.getElementById("mainChartLabels");
+
+        // On calcule la valeur max pour que la barre la plus haute remplisse le conteneur
+        const maxVal = Math.max(
+          ...data.resolved.map((v, i) => v + data.transferred[i]),
+        );
+
+        chart.innerHTML = data.resolved
+          .map((val, i) => {
+            const total = val + data.transferred[i];
+            const totalPct = Math.round((total / maxVal) * 100);
+            const resolvedPctOfBar = Math.round((val / total) * 100);
+
+            return `
+        <div class="flex-1 flex flex-col items-center justify-end h-full">
+          <!-- Conteneur de la barre : hauteur totale = volume du jour -->
+          <div class="w-full max-w-[36px] rounded-t-lg overflow-hidden flex flex-col-reverse bar" style="height:${totalPct}%">
+            <div class="bg-indigo-500" style="height:${resolvedPctOfBar}%"></div>
+            <div class="bg-slate-200" style="height:${100 - resolvedPctOfBar}%"></div>
+          </div>
+        </div>
+      `;
+          })
+          .join("");
+
+        labels.innerHTML = data.labels
+          .map(
+            (l) =>
+              `<span class="text-xs text-slate-400 flex-1 text-center">${l}</span>`,
+          )
+          .join("");
+
+        // Mise à jour des KPIs
+        document.getElementById("kpi-conversations").textContent =
+          data.kpis.conversations;
+        document.getElementById("kpi-resolution").textContent =
+          data.kpis.resolution;
+        document.getElementById("kpi-temps").textContent = data.kpis.temps;
+        document.getElementById("kpi-satisfaction").textContent =
+          data.kpis.satisfaction;
+      }
+
+      // ── Gestion des boutons de période ──
+      document.querySelectorAll(".period-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          // Reset visuel de tous les boutons
+          document.querySelectorAll(".period-btn").forEach((b) => {
+            b.classList.remove("bg-indigo-600", "text-white");
+            b.classList.add("text-slate-500");
+          });
+          // Bouton actif
+          btn.classList.add("bg-indigo-600", "text-white");
+          btn.classList.remove("text-slate-500");
+
+          renderChart(btn.dataset.period);
+        });
+      });
+
+      // openSidebar() et closeSidebar() sont définies dans js/app.js
+
+      // Init : période 7 jours par défaut
+      renderChart(7);
+    </script>
+  </body>
+</html>

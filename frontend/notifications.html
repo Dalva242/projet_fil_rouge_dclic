@@ -1,0 +1,890 @@
+<!doctype html>
+<html lang="fr" class="h-full">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NexaDesk — Notifications</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <!-- JS partagé entre toutes les pages : sidebar, toast, toggle, helpers -->
+    <script src="js/app.js"></script>
+    <style>
+      body {
+        font-family: "Inter", sans-serif;
+      }
+
+      .nav-link {
+        transition: background 0.15s;
+      }
+      .nav-link:hover {
+        background: rgba(99, 102, 241, 0.06);
+      }
+      .nav-link.active {
+        background: rgba(99, 102, 241, 0.1);
+        color: #4338ca;
+      }
+      .nav-link.active svg {
+        color: #4f46e5;
+      }
+
+      #sidebar {
+        transition: transform 0.25s ease;
+      }
+      @media (max-width: 1023px) {
+        #sidebar {
+          transform: translateX(-100%);
+        }
+        #sidebar.open {
+          transform: translateX(0);
+        }
+      }
+
+      ::-webkit-scrollbar {
+        width: 5px;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 10px;
+      }
+
+      .fade-up {
+        animation: fadeUp 0.35s ease-out;
+      }
+      @keyframes fadeUp {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .pulse {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: #22c55e;
+        animation: pulse 2s infinite;
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.5);
+        }
+        50% {
+          box-shadow: 0 0 0 6px rgba(34, 197, 94, 0);
+        }
+      }
+
+      /* Notification non lue : fond légèrement teinté */
+      .notif-unread {
+        background: #fafbff;
+        border-left: 3px solid #6366f1;
+      }
+      .notif-read {
+        background: white;
+        border-left: 3px solid transparent;
+      }
+
+      .notif-item {
+        transition: background 0.15s;
+        cursor: pointer;
+      }
+      .notif-item:hover {
+        background: #f8fafc;
+      }
+    </style>
+  </head>
+
+  <body class="h-full bg-slate-50 text-slate-800">
+    <div class="flex h-screen overflow-hidden">
+      <!-- Overlay mobile -->
+      <div
+        id="overlay"
+        class="hidden fixed inset-0 bg-black/40 z-30 lg:hidden"
+        onclick="closeSidebar()"
+      ></div>
+
+      <!-- ══════════════════════════════════════
+       SIDEBAR
+  ══════════════════════════════════════ -->
+      <aside
+        id="sidebar"
+        class="fixed lg:static z-40 inset-y-0 left-0 w-64 bg-white border-r border-slate-200 flex flex-col"
+      >
+        <div
+          class="h-16 flex items-center gap-3 px-5 border-b border-slate-100"
+        >
+          <div
+            class="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center"
+          >
+            <svg
+              class="w-5 h-5 text-white"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
+              />
+            </svg>
+          </div>
+          <span class="font-bold text-slate-800 text-base">NexaDesk</span>
+          <button
+            class="ml-auto lg:hidden text-slate-400"
+            onclick="closeSidebar()"
+          >
+            <svg
+              class="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+        </div>
+
+        <nav class="flex-1 py-4 px-3 space-y-0.5 overflow-y-auto">
+          <p
+            class="px-3 mb-2 text-[11px] font-semibold text-slate-400 uppercase tracking-wider"
+          >
+            Général
+          </p>
+
+          <a
+            href="index.html"
+            class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600"
+          >
+            <svg
+              class="w-5 h-5 text-slate-400"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+              />
+            </svg>
+            Dashboard
+          </a>
+
+          <a
+            href="conversations.html"
+            class="nav-link flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600"
+          >
+            <span class="flex items-center gap-3">
+              <svg
+                class="w-5 h-5 text-slate-400"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.86 9.86 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                />
+              </svg>
+              Conversations
+            </span>
+            <span
+              class="text-xs font-semibold bg-indigo-100 text-indigo-600 px-1.5 py-0.5 rounded-md"
+              >12</span
+            >
+          </a>
+
+          <a
+            href="commandes.html"
+            class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600"
+          >
+            <svg
+              class="w-5 h-5 text-slate-400"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
+              />
+            </svg>
+            Commandes
+          </a>
+
+          <a
+            href="reservations.html"
+            class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600"
+          >
+            <svg
+              class="w-5 h-5 text-slate-400"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+              />
+            </svg>
+            Réservations
+          </a>
+
+          <a
+            href="notifications.html"
+            class="nav-link active flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium"
+          >
+            <svg
+              class="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+              />
+            </svg>
+            Notifications
+          </a>
+
+          <p
+            class="px-3 mt-5 mb-2 text-[11px] font-semibold text-slate-400 uppercase tracking-wider"
+          >
+            Pilotage
+          </p>
+
+          <a
+            href="analytics.html"
+            class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600"
+          >
+            <svg
+              class="w-5 h-5 text-slate-400"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm6 0V9a2 2 0 00-2-2h-2a2 2 0 00-2 2v10a2 2 0 002 2h2a2 2 0 002-2zm6 0V5a2 2 0 00-2-2h-2a2 2 0 00-2 2v14a2 2 0 002 2h2a2 2 0 002-2z"
+              />
+            </svg>
+            Analytics
+          </a>
+
+          <a
+            href="settings.html"
+            class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600"
+          >
+            <svg
+              class="w-5 h-5 text-slate-400"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+              />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+              />
+            </svg>
+            Paramètres IA
+          </a>
+        </nav>
+
+        <div class="p-3 border-t border-slate-100">
+          <div
+            class="flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-slate-50 cursor-pointer"
+          >
+            <img
+              src="https://i.pravatar.cc/40?img=12"
+              class="w-9 h-9 rounded-full"
+              alt="Sarah"
+            />
+            <div>
+              <p class="text-sm font-semibold text-slate-700">Sarah Lemoine</p>
+              <p class="text-xs text-slate-400">Administratrice</p>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- ══════════════════════════════════════
+       CONTENU PRINCIPAL
+  ══════════════════════════════════════ -->
+      <div class="flex-1 flex flex-col overflow-hidden">
+        <!-- Topbar -->
+        <header
+          class="h-16 bg-white border-b border-slate-200 flex items-center gap-4 px-4 sm:px-6"
+        >
+          <button class="lg:hidden text-slate-500" onclick="openSidebar()">
+            <svg
+              class="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M4 6h16M4 12h16M4 18h16"
+              />
+            </svg>
+          </button>
+          <div>
+            <h1 class="text-base font-semibold text-slate-800">
+              Notifications
+            </h1>
+            <p class="text-xs text-slate-400 hidden sm:block">
+              Alertes et notifications automatiques de votre système
+            </p>
+          </div>
+          <div class="flex-1"></div>
+          <span
+            class="hidden sm:flex items-center gap-2 text-xs font-medium text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-full"
+          >
+            <span class="pulse"></span> IA active
+          </span>
+          <img
+            src="https://i.pravatar.cc/36?img=12"
+            class="w-9 h-9 rounded-full"
+            alt="Avatar"
+          />
+        </header>
+
+        <!-- Page scrollable -->
+        <main class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 space-y-6">
+          <!-- En-tête -->
+          <div
+            class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 fade-up"
+          >
+            <div>
+              <h2 class="text-2xl font-bold text-slate-900">Notifications</h2>
+              <p class="text-sm text-slate-500 mt-1" id="unreadCount">
+                Chargement…
+              </p>
+            </div>
+            <!-- Bouton tout marquer comme lu -->
+            <button
+              onclick="markAllRead()"
+              class="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 bg-white border border-slate-200 px-4 py-2.5 rounded-xl hover:bg-slate-50 transition-colors"
+            >
+              <svg
+                class="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M5 13l4 4L19 7"
+                />
+              </svg>
+              Tout marquer comme lu
+            </button>
+          </div>
+
+          <!-- ─── Filtres par type ─── -->
+          <!-- Concept Tailwind : flex gap + boutons pill avec état actif géré en JS -->
+          <div class="flex flex-wrap gap-2 fade-up" id="filterBtns">
+            <button
+              data-filter="all"
+              class="filter-btn active text-xs font-semibold px-3 py-1.5 rounded-full bg-indigo-600 text-white transition-colors"
+            >
+              Toutes
+            </button>
+            <button
+              data-filter="message"
+              class="filter-btn text-xs font-semibold px-3 py-1.5 rounded-full bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors"
+            >
+              💬 Messages
+            </button>
+            <button
+              data-filter="order"
+              class="filter-btn text-xs font-semibold px-3 py-1.5 rounded-full bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors"
+            >
+              🛍️ Commandes
+            </button>
+            <button
+              data-filter="reservation"
+              class="filter-btn text-xs font-semibold px-3 py-1.5 rounded-full bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors"
+            >
+              📅 Réservations
+            </button>
+            <button
+              data-filter="ai"
+              class="filter-btn text-xs font-semibold px-3 py-1.5 rounded-full bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors"
+            >
+              🤖 IA
+            </button>
+            <button
+              data-filter="alert"
+              class="filter-btn text-xs font-semibold px-3 py-1.5 rounded-full bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors"
+            >
+              ⚠️ Alertes
+            </button>
+          </div>
+
+          <!-- ─── Liste des notifications ─── -->
+          <div class="space-y-2 fade-up" id="notifList"></div>
+
+          <!-- État vide -->
+          <div id="emptyState" class="hidden text-center py-16 fade-up">
+            <div
+              class="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-3"
+            >
+              <svg
+                class="w-7 h-7 text-slate-400"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.5"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+                />
+              </svg>
+            </div>
+            <p class="text-sm font-medium text-slate-500">
+              Aucune notification dans cette catégorie
+            </p>
+          </div>
+
+          <!-- ─── Paramètres de notification rapides ─── -->
+          <!-- Concept Tailwind : grid 2 colonnes + toggle switch custom -->
+          <div class="bg-white rounded-2xl border border-slate-200 p-5 fade-up">
+            <h3 class="text-base font-semibold text-slate-800 mb-1">
+              Préférences de notification
+            </h3>
+            <p class="text-sm text-slate-400 mb-5">
+              Choisissez quels événements déclenchent une notification
+              automatique.
+            </p>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <!-- Toggle item -->
+              <div
+                class="flex items-center justify-between p-4 bg-slate-50 rounded-xl"
+              >
+                <div>
+                  <p class="text-sm font-medium text-slate-700">
+                    Nouveau message client
+                  </p>
+                  <p class="text-xs text-slate-400 mt-0.5">
+                    Dès qu'un client démarre une conversation
+                  </p>
+                </div>
+                <button
+                  onclick="togglePref(this)"
+                  class="toggle-btn w-11 h-6 rounded-full bg-indigo-500 relative transition-colors"
+                  data-on="true"
+                >
+                  <span
+                    class="block w-4 h-4 bg-white rounded-full absolute top-1 right-1 transition-all shadow-sm"
+                  ></span>
+                </button>
+              </div>
+
+              <div
+                class="flex items-center justify-between p-4 bg-slate-50 rounded-xl"
+              >
+                <div>
+                  <p class="text-sm font-medium text-slate-700">
+                    Nouvelle commande
+                  </p>
+                  <p class="text-xs text-slate-400 mt-0.5">
+                    Quand une commande est passée via le chatbot
+                  </p>
+                </div>
+                <button
+                  onclick="togglePref(this)"
+                  class="toggle-btn w-11 h-6 rounded-full bg-indigo-500 relative transition-colors"
+                  data-on="true"
+                >
+                  <span
+                    class="block w-4 h-4 bg-white rounded-full absolute top-1 right-1 transition-all shadow-sm"
+                  ></span>
+                </button>
+              </div>
+
+              <div
+                class="flex items-center justify-between p-4 bg-slate-50 rounded-xl"
+              >
+                <div>
+                  <p class="text-sm font-medium text-slate-700">
+                    Réservation annulée
+                  </p>
+                  <p class="text-xs text-slate-400 mt-0.5">
+                    En cas d'annulation par un client
+                  </p>
+                </div>
+                <button
+                  onclick="togglePref(this)"
+                  class="toggle-btn w-11 h-6 rounded-full bg-indigo-500 relative transition-colors"
+                  data-on="true"
+                >
+                  <span
+                    class="block w-4 h-4 bg-white rounded-full absolute top-1 right-1 transition-all shadow-sm"
+                  ></span>
+                </button>
+              </div>
+
+              <div
+                class="flex items-center justify-between p-4 bg-slate-50 rounded-xl"
+              >
+                <div>
+                  <p class="text-sm font-medium text-slate-700">
+                    IA incapable de répondre
+                  </p>
+                  <p class="text-xs text-slate-400 mt-0.5">
+                    L'IA transfère vers un agent humain
+                  </p>
+                </div>
+                <button
+                  onclick="togglePref(this)"
+                  class="toggle-btn w-11 h-6 rounded-full bg-indigo-500 relative transition-colors"
+                  data-on="true"
+                >
+                  <span
+                    class="block w-4 h-4 bg-white rounded-full absolute top-1 right-1 transition-all shadow-sm"
+                  ></span>
+                </button>
+              </div>
+
+              <div
+                class="flex items-center justify-between p-4 bg-slate-50 rounded-xl"
+              >
+                <div>
+                  <p class="text-sm font-medium text-slate-700">
+                    Rapport journalier
+                  </p>
+                  <p class="text-xs text-slate-400 mt-0.5">
+                    Résumé automatique chaque soir à 20h
+                  </p>
+                </div>
+                <button
+                  onclick="togglePref(this)"
+                  class="toggle-btn w-11 h-6 rounded-full bg-slate-200 relative transition-colors"
+                  data-on="false"
+                >
+                  <span
+                    class="block w-4 h-4 bg-white rounded-full absolute top-1 left-1 transition-all shadow-sm"
+                  ></span>
+                </button>
+              </div>
+
+              <div
+                class="flex items-center justify-between p-4 bg-slate-50 rounded-xl"
+              >
+                <div>
+                  <p class="text-sm font-medium text-slate-700">
+                    Alerte stock pharmacie
+                  </p>
+                  <p class="text-xs text-slate-400 mt-0.5">
+                    Quand un produit est demandé mais absent
+                  </p>
+                </div>
+                <button
+                  onclick="togglePref(this)"
+                  class="toggle-btn w-11 h-6 rounded-full bg-slate-200 relative transition-colors"
+                  data-on="false"
+                >
+                  <span
+                    class="block w-4 h-4 bg-white rounded-full absolute top-1 left-1 transition-all shadow-sm"
+                  ></span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <!-- Toast -->
+    <div
+      id="toast"
+      class="hidden fixed bottom-6 right-6 z-50 flex items-center gap-2 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-xl text-sm font-medium"
+    >
+      <svg
+        class="w-4 h-4 text-emerald-400"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2.5"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          d="M5 13l4 4L19 7"
+        />
+      </svg>
+      <span id="toastText">Action effectuée</span>
+    </div>
+
+    <script>
+      // ── Données simulées ─────────────────────────────────
+      let notifications = [
+        {
+          id: 1,
+          type: "message",
+          unread: true,
+          time: "Il y a 3 min",
+          title: "Nouveau message de Karim Bensalem",
+          body: "« D'accord merci, j'attends la confirmation ! »",
+          business: "Restaurant Le Bistrot",
+          avatar: "https://i.pravatar.cc/36?img=33",
+        },
+        {
+          id: 2,
+          type: "order",
+          unread: true,
+          time: "Il y a 8 min",
+          title: "Nouvelle commande #4821",
+          body: "Karim Bensalem — Couscous royal × 2 — 42,00 €",
+          business: "Restaurant Le Bistrot",
+          avatar: null,
+        },
+        {
+          id: 3,
+          type: "ai",
+          unread: true,
+          time: "Il y a 15 min",
+          title: "L'IA a transféré une conversation",
+          body: "Mohamed Cherif demande un remboursement — agent requis",
+          business: "Pharmacie Centrale",
+          avatar: null,
+        },
+        {
+          id: 4,
+          type: "reservation",
+          unread: true,
+          time: "Il y a 22 min",
+          title: "Réservation annulée par Yacine Tahiri",
+          body: "Table pour 3 — Vendredi 20 juin à 18h00",
+          business: "Hôtel Riviera",
+          avatar: "https://i.pravatar.cc/36?img=22",
+        },
+        {
+          id: 5,
+          type: "alert",
+          unread: true,
+          time: "Il y a 35 min",
+          title: "⚠️ Pic de conversations détecté",
+          body: "+42% de conversations en 30 minutes — surveiller",
+          business: "Système",
+          avatar: null,
+        },
+        {
+          id: 6,
+          type: "message",
+          unread: false,
+          time: "Il y a 1h",
+          title: "Nouveau message de Léa Martin",
+          body: "« Je n'arrive pas à modifier ma date d'arrivée… »",
+          business: "Hôtel Riviera",
+          avatar: "https://i.pravatar.cc/36?img=47",
+        },
+        {
+          id: 7,
+          type: "order",
+          unread: false,
+          time: "Il y a 1h 20",
+          title: "Commande #4819 prête",
+          body: "Inès Dubois — Paracétamol 1000mg — à récupérer",
+          business: "Pharmacie Centrale",
+          avatar: null,
+        },
+        {
+          id: 8,
+          type: "reservation",
+          unread: false,
+          time: "Il y a 2h",
+          title: "Nouvelle réservation — Thomas Garnier",
+          body: "Table pour 6 — Dimanche 21 juin à 19h30 (Anniversaire)",
+          business: "Restaurant Le Bistrot",
+          avatar: "https://i.pravatar.cc/36?img=14",
+        },
+        {
+          id: 9,
+          type: "ai",
+          unread: false,
+          time: "Il y a 3h",
+          title: "Résumé IA — matin",
+          body: "47 conversations traitées, 94% résolues automatiquement",
+          business: "Système",
+          avatar: null,
+        },
+        {
+          id: 10,
+          type: "alert",
+          unread: false,
+          time: "Hier à 20h05",
+          title: "Rapport journalier disponible",
+          body: "86 commandes · 312 conversations · CA : 2 340 €",
+          business: "Système",
+          avatar: null,
+        },
+      ];
+
+      // Icône et couleur par type de notification
+      const TYPE_CONFIG = {
+        message: { icon: "💬", bg: "bg-indigo-50", text: "text-indigo-600" },
+        order: { icon: "🛍️", bg: "bg-violet-50", text: "text-violet-600" },
+        reservation: { icon: "📅", bg: "bg-blue-50", text: "text-blue-600" },
+        ai: { icon: "🤖", bg: "bg-emerald-50", text: "text-emerald-600" },
+        alert: { icon: "⚠️", bg: "bg-amber-50", text: "text-amber-600" },
+      };
+
+      let currentFilter = "all";
+
+      // ── Rendu de la liste ─────────────────────────────────
+      function render() {
+        const filtered =
+          currentFilter === "all"
+            ? notifications
+            : notifications.filter((n) => n.type === currentFilter);
+
+        const list = document.getElementById("notifList");
+        const empty = document.getElementById("emptyState");
+        const unreadTotal = notifications.filter((n) => n.unread).length;
+
+        // Mise à jour du sous-titre
+        document.getElementById("unreadCount").textContent =
+          unreadTotal > 0
+            ? `${unreadTotal} notification${unreadTotal > 1 ? "s" : ""} non lue${unreadTotal > 1 ? "s" : ""}`
+            : "Tout est à jour ✓";
+
+        if (filtered.length === 0) {
+          list.innerHTML = "";
+          empty.classList.remove("hidden");
+          return;
+        }
+        empty.classList.add("hidden");
+
+        list.innerHTML = filtered
+          .map((n) => {
+            const cfg = TYPE_CONFIG[n.type];
+            return `
+        <div class="notif-item ${n.unread ? "notif-unread" : "notif-read"} rounded-xl p-4 flex items-start gap-4 border border-slate-100"
+             onclick="markRead(${n.id})">
+
+          <!-- Icône type -->
+          <div class="w-10 h-10 rounded-xl ${cfg.bg} flex items-center justify-center text-lg flex-shrink-0">
+            ${cfg.icon}
+          </div>
+
+          <!-- Contenu -->
+          <div class="flex-1 min-w-0">
+            <div class="flex items-start justify-between gap-3">
+              <p class="text-sm font-semibold text-slate-800">${n.title}</p>
+              <div class="flex items-center gap-2 flex-shrink-0">
+                <span class="text-xs text-slate-400 whitespace-nowrap">${n.time}</span>
+                <!-- Point rouge si non lu -->
+                ${n.unread ? '<span class="w-2 h-2 rounded-full bg-indigo-500 flex-shrink-0"></span>' : ""}
+              </div>
+            </div>
+            <p class="text-sm text-slate-500 mt-0.5 truncate">${n.body}</p>
+            <span class="inline-block mt-1.5 text-[11px] font-medium text-slate-400">${n.business}</span>
+          </div>
+
+        </div>
+      `;
+          })
+          .join("");
+      }
+
+      // ── Marquer une notif comme lue ───────────────────────
+      function markRead(id) {
+        const n = notifications.find((n) => n.id === id);
+        if (n && n.unread) {
+          n.unread = false;
+          render();
+        }
+      }
+
+      // ── Tout marquer comme lu ─────────────────────────────
+      function markAllRead() {
+        notifications.forEach((n) => (n.unread = false));
+        render();
+        showToast("Toutes les notifications sont marquées comme lues");
+      }
+
+      // ── Filtres ───────────────────────────────────────────
+      document.getElementById("filterBtns").addEventListener("click", (e) => {
+        const btn = e.target.closest(".filter-btn");
+        if (!btn) return;
+
+        currentFilter = btn.dataset.filter;
+
+        // Mise à jour visuelle des boutons
+        document.querySelectorAll(".filter-btn").forEach((b) => {
+          b.classList.remove("bg-indigo-600", "text-white");
+          b.classList.add(
+            "bg-white",
+            "border",
+            "border-slate-200",
+            "text-slate-600",
+          );
+        });
+        btn.classList.add("bg-indigo-600", "text-white");
+        btn.classList.remove(
+          "bg-white",
+          "border",
+          "border-slate-200",
+          "text-slate-600",
+        );
+
+        render();
+      });
+
+      // ── Toggle préférences notification ──────────────────
+      // toggleSwitch() est définie dans js/app.js (réutilisée sur toutes les pages).
+      // Ici on l'appelle puis on ajoute juste le toast spécifique à cette page.
+      function togglePref(btn) {
+        const isNowOn = toggleSwitch(btn);
+        showToast(isNowOn ? "Notification activée" : "Notification désactivée");
+      }
+
+      // showToast(), openSidebar() et closeSidebar() viennent de js/app.js
+
+      // Init
+      render();
+    </script>
+  </body>
+</html>
